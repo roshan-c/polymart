@@ -5,7 +5,11 @@ import { routeTree } from "./routeTree.gen";
 
 import { ConvexReactClient } from "convex/react";
 import { ConvexProvider } from "convex/react";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
 const router = createRouter({
 	routeTree,
@@ -13,7 +17,13 @@ const router = createRouter({
 	defaultPendingComponent: () => <Loader />,
 	context: {},
 	Wrap: function WrapComponent({ children }: { children: React.ReactNode }) {
-		return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+		return (
+			<ClerkProvider publishableKey={clerkPubKey}>
+				<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+					{children}
+				</ConvexProviderWithClerk>
+			</ClerkProvider>
+		);
 	},
 });
 
