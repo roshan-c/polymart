@@ -67,4 +67,14 @@ export default defineSchema({
 	})
 		.index("by_key", ["key"])
 		.index("by_user", ["userId"]),
+
+	probabilityHistory: defineTable({
+		pollId: v.id("polls"),
+		outcomeId: v.id("outcomes"),
+		probability: v.number(),
+		timestamp: v.number(),
+	})
+		.index("by_poll", ["pollId"])
+		.index("by_outcome", ["outcomeId"])
+		.index("by_poll_timestamp", ["pollId", "timestamp"]),
 });

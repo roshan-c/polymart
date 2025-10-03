@@ -10,6 +10,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { SignInButton } from "@clerk/clerk-react";
+import { ProbabilityChart } from "@/components/probability-chart";
 
 export const Route = createFileRoute("/polls/$pollId")({
 	component: PollDetailComponent,
@@ -20,6 +21,7 @@ function PollDetailComponent() {
 	const navigate = useNavigate();
 	const currentUser = useCurrentUser();
 	const poll = useQuery(api.polls.get, { pollId: pollId as any });
+	const probabilityHistory = useQuery(api.polls.getProbabilityHistory, { pollId: pollId as any });
 	const placeBet = useMutation(api.bets.placeBet);
 	const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
 	const [betAmount, setBetAmount] = useState("");
@@ -73,20 +75,12 @@ function PollDetailComponent() {
 						<p className="text-center text-muted-foreground">Poll not found</p>
 					</CardContent>
 				</Card>
-			</div>
-		);
-	}
 
-	const isResolved = poll.status === "resolved";
-	const winningOutcome = poll.outcomes.find((o) => o._id === poll.winningOutcomeId);
+				<ProbabilityChart
+					data={probabilityHistory?.history || []}
+					outcomes={probabilityHistory?.outcomes || []}
+				/>
 
-	return (
-		<div className="container mx-auto max-w-4xl px-4 py-8">
-			<Button variant="ghost" onClick={() => navigate({ to: "/polls" })} className="mb-4">
-				← Back to Markets
-			</Button>
-
-			<div className="space-y-6">
 				<Card>
 					<CardHeader>
 						<div className="flex items-start justify-between">

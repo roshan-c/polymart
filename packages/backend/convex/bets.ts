@@ -82,6 +82,37 @@ export const placeBet = mutation({
 			settled: false,
 		});
 
+		const allBets = await ctx.db
+			.query("bets")
+			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+			.collect();
+
+		const totalVolume = allBets.reduce(
+			(sum, bet) => sum + bet.pointsWagered,
+			0
+		);
+
+		const allOutcomes = await ctx.db
+			.query("outcomes")
+			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+			.collect();
+
+		for (const out of allOutcomes) {
+			const outcomeBets = allBets.filter((bet) => bet.outcomeId === out._id);
+			const outcomeVolume = outcomeBets.reduce(
+				(sum, bet) => sum + bet.pointsWagered,
+				0
+			);
+			const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
+
+			await ctx.db.insert("probabilityHistory", {
+				pollId: args.pollId,
+				outcomeId: out._id,
+				probability,
+				timestamp: Date.now(),
+			});
+		}
+
 		return await ctx.db.get(betId);
 	},
 });

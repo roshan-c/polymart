@@ -186,3 +186,44 @@ export const getUserPolls = query({
 		return polls;
 	},
 });
+
+export const getProbabilityHistory = query({
+	args: {
+		pollId: v.id("polls"),
+	},
+	handler: async (ctx, args) => {
+		const history = await ctx.db
+			.query("probabilityHistory")
+			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+			.collect();
+
+		const outcomes = await ctx.db
+			.query("outcomes")
+			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+			.collect();
+
+		const groupedByTimestamp: Record<number, Record<string, number>> = {};
+
+		for (const entry of history) {
+			if (!groupedByTimestamp[entry.timestamp]) {
+				groupedByTimestamp[entry.timestamp] = {};
+			}
+			const outcome = outcomes.find((o) => o._id === entry.outcomeId);
+			if (outcome) {
+				groupedByTimestamp[entry.timestamp][outcome.title] = entry.probability;
+			}
+		}
+
+		const formattedHistory = Object.entries(groupedByTimestamp)
+			.map(([timestamp, probabilities]) => ({
+				timestamp: Number(timestamp),
+				...probabilities,
+			}))
+			.sort((a, b) => a.timestamp - b.timestamp);
+
+		return {
+			history: formattedHistory,
+			outcomes: outcomes.map((o) => o.title),
+		};
+	},
+});
