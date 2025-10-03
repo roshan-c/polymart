@@ -4,7 +4,7 @@ import { api } from "@polymart/backend/convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 
 export const Route = createFileRoute("/polls/")({
 	component: PollsIndexComponent,
@@ -27,21 +27,46 @@ function PollCard({ poll }: { poll: any }) {
 				</CardHeader>
 				<CardContent>
 					{chartData.length > 0 && (
-						<div className="mb-4 h-24">
-							<ResponsiveContainer width="100%" height="100%">
-								<LineChart data={chartData}>
-									{outcomes.map((outcome: string, index: number) => (
-										<Line
-											key={outcome}
-											type="monotone"
-											dataKey={outcome}
-											stroke={COLORS[index % COLORS.length]}
-											strokeWidth={2}
-											dot={false}
+						<div className="mb-4">
+							<div className="h-24">
+								<ResponsiveContainer width="100%" height="100%">
+									<LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+										<YAxis
+											domain={[0, 100]}
+											ticks={[0, 50, 100]}
+											tickFormatter={(value) => `${value}%`}
+											width={35}
+											className="text-xs"
 										/>
-									))}
-								</LineChart>
-							</ResponsiveContainer>
+										{outcomes.map((outcome: string, index: number) => (
+											<Line
+												key={outcome}
+												type="monotone"
+												dataKey={outcome}
+												stroke={COLORS[index % COLORS.length]}
+												strokeWidth={2}
+												dot={false}
+											/>
+										))}
+									</LineChart>
+								</ResponsiveContainer>
+							</div>
+							<div className="mt-2 flex flex-wrap gap-2">
+								{outcomes.map((outcome: string, index: number) => {
+									const latestData = chartData[chartData.length - 1];
+									const probability = latestData?.[outcome] || 0;
+									return (
+										<div key={outcome} className="flex items-center gap-1.5 text-xs">
+											<div
+												className="h-2 w-2 rounded-full"
+												style={{ backgroundColor: COLORS[index % COLORS.length] }}
+											/>
+											<span className="text-muted-foreground truncate max-w-[80px]">{outcome}</span>
+											<span className="font-medium">{probability.toFixed(0)}%</span>
+										</div>
+									);
+								})}
+							</div>
 						</div>
 					)}
 					<div className="space-y-2">
