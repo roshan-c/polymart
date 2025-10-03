@@ -18,6 +18,7 @@ import type * as apiKeys from "../apiKeys.js";
 import type * as bets from "../bets.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as migrations from "../migrations.js";
 import type * as polls from "../polls.js";
 import type * as users from "../users.js";
 
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   bets: typeof bets;
   healthCheck: typeof healthCheck;
   http: typeof http;
+  migrations: typeof migrations;
   polls: typeof polls;
   users: typeof users;
 }>;
