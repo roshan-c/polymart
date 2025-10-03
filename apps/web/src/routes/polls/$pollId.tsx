@@ -75,12 +75,20 @@ function PollDetailComponent() {
 						<p className="text-center text-muted-foreground">Poll not found</p>
 					</CardContent>
 				</Card>
+			</div>
+		);
+	}
 
-				<ProbabilityChart
-					data={probabilityHistory?.history || []}
-					outcomes={probabilityHistory?.outcomes || []}
-				/>
+	const isResolved = poll.status === "resolved";
+	const winningOutcome = poll.outcomes.find((o) => o._id === poll.winningOutcomeId);
 
+	return (
+		<div className="container mx-auto max-w-4xl px-4 py-8">
+			<Button variant="ghost" onClick={() => navigate({ to: "/polls" })} className="mb-4">
+				← Back to Markets
+			</Button>
+
+			<div className="space-y-6">
 				<Card>
 					<CardHeader>
 						<div className="flex items-start justify-between">
@@ -115,6 +123,11 @@ function PollDetailComponent() {
 						</div>
 					</CardContent>
 				</Card>
+
+				<ProbabilityChart
+					data={probabilityHistory?.history || []}
+					outcomes={probabilityHistory?.outcomes || []}
+				/>
 
 				{isResolved && winningOutcome && (
 					<Card className="border-green-500">
