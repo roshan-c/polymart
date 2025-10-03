@@ -6,12 +6,14 @@ export default defineSchema({
 		name: v.string(),
 		email: v.string(),
 		clerkId: v.string(),
+		discordId: v.optional(v.string()),
 		pointBalance: v.number(),
 		isAdmin: v.boolean(),
 		createdAt: v.number(),
 	})
 		.index("by_clerkId", ["clerkId"])
-		.index("by_email", ["email"]),
+		.index("by_email", ["email"])
+		.index("by_discordId", ["discordId"]),
 
 	polls: defineTable({
 		title: v.string(),

@@ -195,4 +195,28 @@ http.route({
 	}),
 });
 
+http.route({
+	path: "/api/users/discord/:discordId",
+	method: "GET",
+	handler: httpAction(async (ctx, request) => {
+		const url = new URL(request.url);
+		const pathParts = url.pathname.split("/");
+		const discordId = pathParts[pathParts.length - 1];
+		
+		const user = await ctx.runQuery(api.users.getUserByDiscordId, { discordId });
+		
+		if (!user) {
+			return new Response(JSON.stringify({ error: "User not found. Please sign in at https://polymart.xyz first." }), {
+				status: 404,
+				headers: { "Content-Type": "application/json" },
+			});
+		}
+		
+		return new Response(JSON.stringify({ user }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	}),
+});
+
 export default http;

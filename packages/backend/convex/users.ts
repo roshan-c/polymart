@@ -159,3 +159,41 @@ export const makeAdmin = mutation({
 		return { success: true };
 	},
 });
+
+export const getUserByDiscordId = query({
+	args: {
+		discordId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_discordId", (q) => q.eq("discordId", args.discordId))
+			.first();
+		
+		return user ?? null;
+	},
+});
+
+export const updateDiscordId = mutation({
+	args: {
+		discordId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new Error("Not authenticated");
+		}
+		
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.first();
+		
+		if (!user) {
+			throw new Error("User not found");
+		}
+		
+		await ctx.db.patch(user._id, { discordId: args.discordId });
+		return { success: true };
+	},
+});
