@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { SignInButton } from "@clerk/clerk-react";
@@ -14,28 +14,6 @@ import { ProbabilityChart } from "@/components/probability-chart";
 
 export const Route = createFileRoute("/polls/$pollId")({
 	component: PollDetailComponent,
-	head: ({ params }) => {
-		return {
-			meta: [
-				{
-					property: "og:type",
-					content: "website",
-				},
-				{
-					property: "og:url",
-					content: `https://polymart.xyz/polls/${params.pollId}`,
-				},
-				{
-					property: "twitter:card",
-					content: "summary_large_image",
-				},
-				{
-					property: "twitter:url",
-					content: `https://polymart.xyz/polls/${params.pollId}`,
-				},
-			],
-		};
-	},
 });
 
 function PollDetailComponent() {
@@ -103,29 +81,6 @@ function PollDetailComponent() {
 
 	const isResolved = poll.status === "resolved";
 	const winningOutcome = poll.outcomes.find((o) => o._id === poll.winningOutcomeId);
-
-	useEffect(() => {
-		if (poll) {
-			document.title = `${poll.title} - Polymart`;
-			
-			const metaTags = [
-				{ property: "og:title", content: poll.title },
-				{ property: "og:description", content: poll.description || `Prediction market: ${poll.title}` },
-				{ property: "twitter:title", content: poll.title },
-				{ property: "twitter:description", content: poll.description || `Prediction market: ${poll.title}` },
-			];
-
-			metaTags.forEach(({ property, content }) => {
-				let meta = document.querySelector(`meta[property="${property}"]`);
-				if (!meta) {
-					meta = document.createElement("meta");
-					meta.setAttribute("property", property);
-					document.head.appendChild(meta);
-				}
-				meta.setAttribute("content", content);
-			});
-		}
-	}, [poll]);
 
 	return (
 		<div className="container mx-auto max-w-4xl px-4 py-8">
