@@ -194,6 +194,192 @@ function ApiKeysComponent() {
 					)}
 				</CardContent>
 			</Card>
+
+			<Card className="mt-6">
+				<CardHeader>
+					<CardTitle>API Documentation</CardTitle>
+					<CardDescription>
+						Learn how to use the Polymart API
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-6">
+					<div>
+						<h3 className="text-lg font-semibold mb-2">Base URL</h3>
+						<code className="block bg-muted p-3 rounded text-sm font-mono">
+							https://youthful-lark-845.convex.cloud
+						</code>
+					</div>
+
+					<div>
+						<h3 className="text-lg font-semibold mb-2">Authentication</h3>
+						<p className="text-sm text-muted-foreground mb-2">
+							Include your API key in the Authorization header:
+						</p>
+						<code className="block bg-muted p-3 rounded text-sm font-mono">
+							Authorization: Bearer YOUR_API_KEY
+						</code>
+					</div>
+
+					<div>
+						<h3 className="text-lg font-semibold mb-2">Endpoints</h3>
+						<div className="space-y-4">
+							<div className="border rounded-lg p-4">
+								<div className="flex items-center gap-2 mb-2">
+									<span className="bg-blue-500 text-white text-xs px-2 py-1 rounded font-mono">GET</span>
+									<code className="text-sm font-mono">/api/polls</code>
+								</div>
+								<p className="text-sm text-muted-foreground">Get all polls (optional: ?status=active)</p>
+							</div>
+
+							<div className="border rounded-lg p-4">
+								<div className="flex items-center gap-2 mb-2">
+									<span className="bg-blue-500 text-white text-xs px-2 py-1 rounded font-mono">GET</span>
+									<code className="text-sm font-mono">/api/polls/:pollId</code>
+								</div>
+								<p className="text-sm text-muted-foreground">Get a specific poll by ID</p>
+							</div>
+
+							<div className="border rounded-lg p-4">
+								<div className="flex items-center gap-2 mb-2">
+									<span className="bg-green-500 text-white text-xs px-2 py-1 rounded font-mono">POST</span>
+									<code className="text-sm font-mono">/api/polls</code>
+								</div>
+								<p className="text-sm text-muted-foreground mb-2">Create a new poll</p>
+								<details className="mt-2">
+									<summary className="text-sm font-medium cursor-pointer">Request Body</summary>
+									<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
+{`{
+  "title": "Will it rain tomorrow?",
+  "description": "Prediction market for rain",
+  "outcomes": ["Yes", "No"]
+}`}
+									</pre>
+								</details>
+							</div>
+
+							<div className="border rounded-lg p-4">
+								<div className="flex items-center gap-2 mb-2">
+									<span className="bg-green-500 text-white text-xs px-2 py-1 rounded font-mono">POST</span>
+									<code className="text-sm font-mono">/api/bets</code>
+								</div>
+								<p className="text-sm text-muted-foreground mb-2">Place a bet on an outcome</p>
+								<details className="mt-2">
+									<summary className="text-sm font-medium cursor-pointer">Request Body</summary>
+									<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
+{`{
+  "pollId": "abc123",
+  "outcomeId": "out1",
+  "pointsWagered": 100
+}`}
+									</pre>
+								</details>
+							</div>
+
+							<div className="border rounded-lg p-4">
+								<div className="flex items-center gap-2 mb-2">
+									<span className="bg-blue-500 text-white text-xs px-2 py-1 rounded font-mono">GET</span>
+									<code className="text-sm font-mono">/api/users/:userId/bets</code>
+								</div>
+								<p className="text-sm text-muted-foreground">Get all bets for a user</p>
+							</div>
+
+							<div className="border rounded-lg p-4">
+								<div className="flex items-center gap-2 mb-2">
+									<span className="bg-blue-500 text-white text-xs px-2 py-1 rounded font-mono">GET</span>
+									<code className="text-sm font-mono">/api/users/:userId</code>
+								</div>
+								<p className="text-sm text-muted-foreground">Get user details and stats</p>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<h3 className="text-lg font-semibold mb-2">Example Usage</h3>
+						<details className="border rounded-lg p-4">
+							<summary className="font-medium cursor-pointer">JavaScript / Node.js</summary>
+							<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
+{`const API_BASE = 'https://youthful-lark-845.convex.cloud';
+const API_KEY = 'your_api_key_here';
+
+// Get all polls
+const response = await fetch(\`\${API_BASE}/api/polls\`);
+const { polls } = await response.json();
+
+// Create a poll
+const createResponse = await fetch(\`\${API_BASE}/api/polls\`, {
+  method: 'POST',
+  headers: {
+    'Authorization': \`Bearer \${API_KEY}\`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    title: 'Will Bitcoin reach $100k in 2025?',
+    outcomes: ['Yes', 'No']
+  })
+});
+const { pollId } = await createResponse.json();`}
+							</pre>
+						</details>
+
+						<details className="border rounded-lg p-4 mt-2">
+							<summary className="font-medium cursor-pointer">Python</summary>
+							<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
+{`import requests
+
+API_BASE = 'https://youthful-lark-845.convex.cloud'
+API_KEY = 'your_api_key_here'
+
+# Get all polls
+response = requests.get(f'{API_BASE}/api/polls')
+polls = response.json()['polls']
+
+# Create a poll
+create_response = requests.post(
+    f'{API_BASE}/api/polls',
+    headers={'Authorization': f'Bearer {API_KEY}'},
+    json={
+        'title': 'Will Bitcoin reach $100k in 2025?',
+        'outcomes': ['Yes', 'No']
+    }
+)
+poll_id = create_response.json()['pollId']`}
+							</pre>
+						</details>
+
+						<details className="border rounded-lg p-4 mt-2">
+							<summary className="font-medium cursor-pointer">cURL</summary>
+							<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
+{`# Get all polls
+curl "https://youthful-lark-845.convex.cloud/api/polls"
+
+# Create a poll
+curl -X POST "https://youthful-lark-845.convex.cloud/api/polls" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "Will Bitcoin reach $100k in 2025?",
+    "outcomes": ["Yes", "No"]
+  }'`}
+							</pre>
+						</details>
+					</div>
+
+					<div className="border-t pt-4">
+						<p className="text-sm text-muted-foreground">
+							For complete API documentation, see the{" "}
+							<a
+								href="https://github.com/roshan-c/polymart/blob/master/API.md"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-primary hover:underline"
+							>
+								API.md
+							</a>{" "}
+							file in the repository.
+						</p>
+					</div>
+				</CardContent>
+			</Card>
 		</div>
 	)
 }
