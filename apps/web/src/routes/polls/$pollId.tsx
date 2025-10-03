@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { SignInButton } from "@clerk/clerk-react";
@@ -81,32 +81,6 @@ function PollDetailComponent() {
 
 	const isResolved = poll.status === "resolved";
 	const winningOutcome = poll.outcomes.find((o) => o._id === poll.winningOutcomeId);
-
-	useEffect(() => {
-		if (poll) {
-			document.title = `${poll.title} - Polymart`;
-			
-			const updateMetaTag = (property: string, content: string) => {
-				let meta = document.querySelector(`meta[property="${property}"]`);
-				if (meta) {
-					meta.setAttribute('content', content);
-				}
-			};
-
-			const url = `https://polymart.xyz/polls/${pollId}`;
-			const description = poll.description || `Prediction market: ${poll.title}`;
-			const ogImage = `https://polymart.xyz/api/og?pollId=${pollId}`;
-
-			updateMetaTag('og:title', poll.title);
-			updateMetaTag('og:description', description);
-			updateMetaTag('og:url', url);
-			updateMetaTag('og:image', ogImage);
-			updateMetaTag('twitter:title', poll.title);
-			updateMetaTag('twitter:description', description);
-			updateMetaTag('twitter:url', url);
-			updateMetaTag('twitter:image', ogImage);
-		}
-	}, [poll, pollId]);
 
 	return (
 		<div className="container mx-auto max-w-4xl px-4 py-8">
