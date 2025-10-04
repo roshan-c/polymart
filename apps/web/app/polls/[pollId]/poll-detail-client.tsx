@@ -1,4 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -9,16 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/nextjs";
 import { ProbabilityChart } from "@/components/probability-chart";
 
-export const Route = createFileRoute("/polls/$pollId")({
-	component: PollDetailComponent,
-});
-
-function PollDetailComponent() {
-	const { pollId } = Route.useParams();
-	const navigate = useNavigate();
+export default function PollDetailClient({ pollId }: { pollId: string }) {
+	const router = useRouter();
 	const currentUser = useCurrentUser();
 	const poll = useQuery(api.polls.get, { pollId: pollId as any });
 	const probabilityHistory = useQuery(api.polls.getProbabilityHistory, { pollId: pollId as any });
@@ -88,7 +85,7 @@ function PollDetailComponent() {
 
 	return (
 		<div className="container mx-auto max-w-4xl px-4 py-8">
-			<Button variant="ghost" onClick={() => navigate({ to: "/polls" })} className="mb-4">
+			<Button variant="ghost" onClick={() => router.push("/polls")} className="mb-4">
 				← Back to Markets
 			</Button>
 

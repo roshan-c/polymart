@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+"use client";
+
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -8,14 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/nextjs";
 import type { Id } from "@polymart/backend/convex/_generated/dataModel";
 
-export const Route = createFileRoute("/keys")({
-	component: ApiKeysComponent,
-});
-
-function ApiKeysComponent() {
+export default function ApiKeysPage() {
 	const currentUser = useCurrentUser();
 	const apiKeys = useQuery(api.apiKeys.getUserApiKeys, {});
 	const createApiKey = useMutation(api.apiKeys.createApiKey);

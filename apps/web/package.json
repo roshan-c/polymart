@@ -4,27 +4,26 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3001",
-    "build": "vite build",
-    "serve": "vite preview",
-    "start": "vite",
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.49.1",
+    "@clerk/nextjs": "^6.33.2",
     "@hookform/resolvers": "^5.1.1",
     "@polymart/backend": "workspace:*",
-    "@tailwindcss/vite": "^4.0.15",
     "@tanstack/react-form": "^1.12.3",
-    "@tanstack/react-router": "^1.114.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.27.0",
+    "convex-helpers": "^0.1.104",
     "lucide-react": "^0.473.0",
+    "next": "^15.5.4",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "recharts": "^3.2.1",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
@@ -32,17 +31,14 @@
     "zod": "^4.0.2"
   },
   "devDependencies": {
-    "@tanstack/react-router-devtools": "^1.114.27",
-    "@tanstack/router-plugin": "^1.114.27",
+    "@tailwindcss/postcss": "^4.1.14",
     "@types/node": "^22.13.13",
     "@types/react": "~19.1.10",
     "@types/react-dom": "^19.0.4",
     "@vercel/node": "^5.3.24",
     "@vercel/og": "^0.8.5",
-    "@vitejs/plugin-react": "^4.3.4",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.15",
-    "typescript": "^5.8.3",
-    "vite": "^6.2.2"
+    "typescript": "^5.8.3"
   }
 }

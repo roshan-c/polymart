@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { useEffect, useRef } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 export function useCurrentUser() {
 	const { isSignedIn } = useAuth();
@@ -32,13 +32,13 @@ export function useCurrentUser() {
 			});
 			
 			const discordAccount = externalAccountsArray.find(
-				(account) => account.provider === 'oauth_discord'
+				(account) => account.verification?.strategy === 'oauth_discord'
 			);
 			
-			if (discordAccount?.externalId && !user.discordId) {
-				console.log("Updating Discord ID:", discordAccount.externalId);
+			if (discordAccount?.id && !user.discordId) {
+				console.log("Updating Discord ID:", discordAccount.id);
 				discordIdUpdated.current = true;
-				updateDiscordId({ discordId: discordAccount.externalId })
+				updateDiscordId({ discordId: discordAccount.id })
 					.then(() => console.log("Discord ID updated successfully"))
 					.catch(console.error);
 			}
