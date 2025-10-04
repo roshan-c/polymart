@@ -18,7 +18,7 @@
 
 ## Framework-Specific
 - **Backend**: Convex (mutation/query exports), validate with `v` from `convex/values`
-- **Frontend**: React 19, TanStack Router, Clerk auth, Tailwind CSS, shadcn/ui components
+- **Frontend**: Next.js 15 App Router, React 19, Clerk auth, Tailwind CSS, shadcn/ui components
 - **UI Components**: Use existing shadcn components from `@/components/ui/`, use `cn()` from `@/lib/utils` for className merging
 - **State**: Convex queries/mutations via `useQuery`/`useMutation` hooks
 - **Discord Bot**: discord.js with SlashCommandBuilder pattern

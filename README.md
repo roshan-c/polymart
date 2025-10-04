@@ -5,7 +5,7 @@ A prediction market platform where users can create polls, place bets, and track
 ## Features
 
 - **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
+- **Next.js 15** - React framework with App Router
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
 - **Convex** - Reactive backend-as-a-service platform
@@ -117,7 +117,7 @@ To grant admin privileges to a user:
 ```
 polymart/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
+│   ├── web/         # Next.js 15 frontend application
 ├── packages/
 │   └── backend/     # Convex backend functions and schema
 ```
