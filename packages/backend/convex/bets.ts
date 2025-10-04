@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 const LIQUIDITY_CONSTANT = 100;
@@ -59,20 +59,20 @@ export const placeBet = mutation({
 			throw new Error("Outcome does not belong to this poll");
 		}
 
-		if (poll.allowMultipleVotes !== true) {
-			const existingBets = await ctx.db
-				.query("bets")
-				.withIndex("by_user_poll", (q) => q.eq("userId", user._id).eq("pollId", args.pollId))
-				.collect();
+	if (poll.allowMultipleVotes !== true) {
+		const existingBets = await ctx.db
+			.query("bets")
+			.withIndex("by_user_poll", (q) => q.eq("userId", user._id).eq("pollId", args.pollId))
+			.collect();
 
-			const hasVotedOnDifferentOutcome = existingBets.some(
-				(bet) => bet.outcomeId !== args.outcomeId
-			);
+		const hasVotedOnDifferentOutcome = existingBets.some(
+			(bet) => bet.outcomeId !== args.outcomeId
+		);
 
-			if (hasVotedOnDifferentOutcome) {
-				throw new Error("You can only vote on one outcome for this poll");
-			}
+		if (hasVotedOnDifferentOutcome) {
+			throw new ConvexError("You can only vote on one outcome for this poll");
 		}
+	}
 
 		const sharesReceived = calculateSharesReceived(
 			args.pointsWagered,
@@ -255,20 +255,20 @@ export const placeBetWithAuth = mutation({
 			throw new Error("Outcome does not belong to this poll");
 		}
 
-		if (poll.allowMultipleVotes !== true) {
-			const existingBets = await ctx.db
-				.query("bets")
-				.withIndex("by_user_poll", (q) => q.eq("userId", args.userId).eq("pollId", args.pollId))
-				.collect();
+	if (poll.allowMultipleVotes !== true) {
+		const existingBets = await ctx.db
+			.query("bets")
+			.withIndex("by_user_poll", (q) => q.eq("userId", args.userId).eq("pollId", args.pollId))
+			.collect();
 
-			const hasVotedOnDifferentOutcome = existingBets.some(
-				(bet) => bet.outcomeId !== args.outcomeId
-			);
+		const hasVotedOnDifferentOutcome = existingBets.some(
+			(bet) => bet.outcomeId !== args.outcomeId
+		);
 
-			if (hasVotedOnDifferentOutcome) {
-				throw new Error("You can only vote on one outcome for this poll");
-			}
+		if (hasVotedOnDifferentOutcome) {
+			throw new ConvexError("You can only vote on one outcome for this poll");
 		}
+	}
 
 		const sharesReceived = calculateSharesReceived(
 			args.pointsWagered,
