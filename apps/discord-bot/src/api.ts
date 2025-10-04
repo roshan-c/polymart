@@ -32,13 +32,13 @@ interface ApiResponse<T> {
 }
 
 export class PolymartAPI {
-  private baseUrl: string;
-  private apiKey: string;
+	private baseUrl: string;
+	private apiKey: string;
 
-  constructor() {
-    this.baseUrl = config.polymartApiBase;
-    this.apiKey = config.polymartApiKey;
-  }
+	constructor(apiKey?: string) {
+		this.baseUrl = config.polymartApiBase;
+		this.apiKey = apiKey || config.polymartApiKey;
+	}
 
   private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -98,14 +98,34 @@ export class PolymartAPI {
 		return data.pollId;
 	}
 
-  async placeBet(pollId: string, outcomeId: string, pointsWagered: number): Promise<any> {
-    const data = await this.fetch<{ bet: any }>('/api/bets', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({ pollId, outcomeId, pointsWagered }),
-    });
-    return data.bet;
-  }
+	async placeBet(pollId: string, outcomeId: string, pointsWagered: number): Promise<any> {
+		const data = await this.fetch<{ bet: any }>('/api/bets', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${this.apiKey}`,
+			},
+			body: JSON.stringify({ pollId, outcomeId, pointsWagered }),
+		});
+		return data.bet;
+	}
+
+	async initiateLinking(platform: string, platformUserId: string): Promise<{ token: string; linkUrl: string }> {
+		const data = await this.fetch<{ token: string; linkUrl: string }>('/api/link/initiate', {
+			method: 'POST',
+			body: JSON.stringify({ platform, platformUserId }),
+		});
+		return data;
+	}
+
+	async getUserApiKey(platform: string, platformUserId: string): Promise<string | null> {
+		try {
+			const data = await this.fetch<{ apiKey: string | null }>(`/api/auth/${platform}/${platformUserId}`);
+			return data.apiKey;
+		} catch (error: any) {
+			if (error.message.includes('404') || error.message.includes('not found')) {
+				return null;
+			}
+			throw error;
+		}
+	}
 }

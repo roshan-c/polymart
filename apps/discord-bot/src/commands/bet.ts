@@ -25,34 +25,38 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply();
+	await interaction.deferReply();
 
-  try {
-    const api = new PolymartAPI();
-    
-    const user = await api.getUserByDiscordId(interaction.user.id);
-    if (!user) {
-      await interaction.editReply(
-        '❌ You need to sign in to Polymart first!\n\n' +
-        'Visit https://polymart.xyz and sign in with Discord to link your account.'
-      );
-      return;
-    }
+	try {
+		const api = new PolymartAPI();
+		
+		const userApiKey = await api.getUserApiKey('discord', interaction.user.id);
+		if (!userApiKey) {
+			await interaction.editReply(
+				'❌ You need to link your Polymart account first!\n\n' +
+				'Use `/link` to connect your Discord account to Polymart.'
+			);
+			return;
+		}
 
-    const pollId = interaction.options.get('poll-id', true).value as string;
-    const outcomeId = interaction.options.get('outcome-id', true).value as string;
-    const points = interaction.options.get('points', true).value as number;
+		const userApi = new PolymartAPI(userApiKey);
 
-    const bet = await api.placeBet(pollId, outcomeId, points);
+		const pollId = interaction.options.get('poll-id', true).value as string;
+		const outcomeId = interaction.options.get('outcome-id', true).value as string;
+		const points = interaction.options.get('points', true).value as number;
 
-    await interaction.editReply(
-      `✅ Bet placed successfully!\n` +
-      `Wagered: **${points} points**\n` +
-      `Remaining balance: **${user.pointBalance - points} points**\n` +
-      `Bet ID: \`${bet._id}\`\n\n` +
-      `View poll: https://polymart.xyz/polls/${pollId}`
-    );
-  } catch (error: any) {
-    await interaction.editReply(`Error: ${error.message}`);
-  }
+		const bet = await userApi.placeBet(pollId, outcomeId, points);
+
+		const user = await userApi.getUserByDiscordId(interaction.user.id);
+
+		await interaction.editReply(
+			`✅ Bet placed successfully!\n` +
+			`Wagered: **${points} points**\n` +
+			`Remaining balance: **${user?.pointBalance || 0} points**\n` +
+			`Bet ID: \`${bet._id}\`\n\n` +
+			`View poll: https://polymart.xyz/polls/${pollId}`
+		);
+	} catch (error: any) {
+		await interaction.editReply(`❌ Error: ${error.message}`);
+	}
 }

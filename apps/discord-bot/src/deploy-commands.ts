@@ -4,12 +4,14 @@ import * as pollsCommand from './commands/polls';
 import * as pollCommand from './commands/poll';
 import * as createPollCommand from './commands/create-poll';
 import * as betCommand from './commands/bet';
+import * as linkCommand from './commands/link';
 
 const commands = [
-  pollsCommand.data.toJSON(),
-  pollCommand.data.toJSON(),
-  createPollCommand.data.toJSON(),
-  betCommand.data.toJSON(),
+	pollsCommand.data.toJSON(),
+	pollCommand.data.toJSON(),
+	createPollCommand.data.toJSON(),
+	betCommand.data.toJSON(),
+	linkCommand.data.toJSON(),
 ];
 
 const rest = new REST().setToken(config.discordToken);

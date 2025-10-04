@@ -265,4 +265,108 @@ http.route({
 	}),
 });
 
+http.route({
+	path: "/api/link/initiate",
+	method: "POST",
+	handler: httpAction(async (ctx, request) => {
+		const body = await request.json();
+		const { platform, platformUserId, platformUserName } = body;
+		
+		if (!platform || !platformUserId) {
+			return new Response(
+				JSON.stringify({ error: "Missing required fields: platform, platformUserId" }),
+				{ status: 400, headers: { "Content-Type": "application/json" } }
+			);
+		}
+		
+		try {
+			const result = await ctx.runMutation(api.thirdPartyAuth.initiateLinking, {
+				platform,
+				platformUserId,
+				platformUserName,
+			});
+			
+			const linkUrl = `https://polymart.xyz/link?token=${result.token}`;
+			
+			return new Response(
+				JSON.stringify({
+					token: result.token,
+					linkUrl,
+					expiresIn: result.expiresIn,
+				}),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				}
+			);
+		} catch (error: any) {
+			return new Response(
+				JSON.stringify({ error: error.message }),
+				{ status: 400, headers: { "Content-Type": "application/json" } }
+			);
+		}
+	}),
+});
+
+http.route({
+	path: "/api/link/verify",
+	method: "POST",
+	handler: httpAction(async (ctx, request) => {
+		const body = await request.json();
+		const { token, scopes } = body;
+		
+		if (!token) {
+			return new Response(
+				JSON.stringify({ error: "Missing required field: token" }),
+				{ status: 400, headers: { "Content-Type": "application/json" } }
+			);
+		}
+		
+		try {
+			const result = await ctx.runMutation(api.thirdPartyAuth.verifyLinkToken, {
+				token,
+				scopes,
+			});
+			
+			return new Response(JSON.stringify(result), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		} catch (error: any) {
+			return new Response(
+				JSON.stringify({ error: error.message }),
+				{ status: 400, headers: { "Content-Type": "application/json" } }
+			);
+		}
+	}),
+});
+
+http.route({
+	path: "/api/auth/:platform/:platformUserId",
+	method: "GET",
+	handler: httpAction(async (ctx, request) => {
+		const url = new URL(request.url);
+		const pathParts = url.pathname.split("/");
+		const platform = pathParts[3];
+		const platformUserId = pathParts[4];
+		
+		const auth = await ctx.runQuery(api.thirdPartyAuth.getAuthorizationByPlatformUser, {
+			platform,
+			platformUserId,
+		});
+		
+		if (!auth) {
+			return new Response(
+				JSON.stringify({ error: "No active authorization found. Please link your account first." }),
+				{ status: 404, headers: { "Content-Type": "application/json" } }
+			);
+		}
+		
+		return new Response(JSON.stringify(auth), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	}),
+});
+
 export default http;

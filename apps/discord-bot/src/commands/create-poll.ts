@@ -33,14 +33,16 @@ export async function execute(interaction: CommandInteraction) {
 	try {
 		const api = new PolymartAPI();
 		
-		const user = await api.getUserByDiscordId(interaction.user.id);
-		if (!user) {
+		const userApiKey = await api.getUserApiKey('discord', interaction.user.id);
+		if (!userApiKey) {
 			await interaction.editReply(
-				'❌ You need to sign in to Polymart first!\n\n' +
-				'Visit https://polymart.xyz and sign in with Discord to link your account.'
+				'❌ You need to link your Polymart account first!\n\n' +
+				'Use `/link` to connect your Discord account to Polymart.'
 			);
 			return;
 		}
+
+		const userApi = new PolymartAPI(userApiKey);
 
 		const title = interaction.options.get('title', true).value as string;
 		const outcomesStr = interaction.options.get('outcomes', true).value as string;
@@ -50,11 +52,11 @@ export async function execute(interaction: CommandInteraction) {
 		const outcomes = outcomesStr.split(',').map(o => o.trim()).filter(o => o);
 
 		if (outcomes.length < 2 || outcomes.length > 10) {
-			await interaction.editReply('Error: Polls must have between 2 and 10 outcomes.');
+			await interaction.editReply('❌ Error: Polls must have between 2 and 10 outcomes.');
 			return;
 		}
 
-		const pollId = await api.createPoll(title, outcomes, description, allowMultipleVotes);
+		const pollId = await userApi.createPoll(title, outcomes, description, allowMultipleVotes);
 
 		await interaction.editReply(
 			`✅ Poll created successfully!\n` +
@@ -65,6 +67,6 @@ export async function execute(interaction: CommandInteraction) {
 			`View it: https://polymart.xyz/polls/${pollId}`
 		);
 	} catch (error: any) {
-		await interaction.editReply(`Error: ${error.message}`);
+		await interaction.editReply(`❌ Error: ${error.message}`);
 	}
 }

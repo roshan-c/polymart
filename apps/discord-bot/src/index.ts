@@ -4,14 +4,15 @@ import * as pollsCommand from './commands/polls';
 import * as pollCommand from './commands/poll';
 import * as createPollCommand from './commands/create-poll';
 import * as betCommand from './commands/bet';
+import * as linkCommand from './commands/link';
 
 interface Command {
-  data: any;
-  execute: (interaction: CommandInteraction) => Promise<void>;
+	data: any;
+	execute: (interaction: CommandInteraction) => Promise<void>;
 }
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+	intents: [GatewayIntentBits.Guilds],
 });
 
 const commands = new Collection<string, Command>();
@@ -19,6 +20,7 @@ commands.set(pollsCommand.data.name, pollsCommand as Command);
 commands.set(pollCommand.data.name, pollCommand as Command);
 commands.set(createPollCommand.data.name, createPollCommand as Command);
 commands.set(betCommand.data.name, betCommand as Command);
+commands.set(linkCommand.data.name, linkCommand as Command);
 
 client.once(Events.ClientReady, (c) => {
   console.log(`✅ Bot ready! Logged in as ${c.user.tag}`);

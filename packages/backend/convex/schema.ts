@@ -80,4 +80,30 @@ export default defineSchema({
 		.index("by_poll", ["pollId"])
 		.index("by_outcome", ["outcomeId"])
 		.index("by_poll_timestamp", ["pollId", "timestamp"]),
+
+	thirdPartyAuthorizations: defineTable({
+		userId: v.id("users"),
+		platform: v.string(),
+		platformUserId: v.string(),
+		apiKeyId: v.id("apiKeys"),
+		scopes: v.array(v.string()),
+		createdAt: v.number(),
+		lastUsedAt: v.optional(v.number()),
+		active: v.boolean(),
+	})
+		.index("by_user", ["userId"])
+		.index("by_platform_user", ["platform", "platformUserId"])
+		.index("by_apiKey", ["apiKeyId"]),
+
+	linkTokens: defineTable({
+		token: v.string(),
+		platform: v.string(),
+		platformUserId: v.string(),
+		platformUserName: v.optional(v.string()),
+		expiresAt: v.number(),
+		used: v.boolean(),
+		createdAt: v.number(),
+	})
+		.index("by_token", ["token"])
+		.index("by_platform_user", ["platform", "platformUserId"]),
 });

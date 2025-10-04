@@ -20,6 +20,7 @@ import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
 import type * as polls from "../polls.js";
+import type * as thirdPartyAuth from "../thirdPartyAuth.js";
 import type * as users from "../users.js";
 
 /**
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   migrations: typeof migrations;
   polls: typeof polls;
+  thirdPartyAuth: typeof thirdPartyAuth;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

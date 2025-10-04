@@ -15,11 +15,14 @@ import type { Id } from "@polymart/backend/convex/_generated/dataModel";
 export default function ApiKeysPage() {
 	const currentUser = useCurrentUser();
 	const apiKeys = useQuery(api.apiKeys.getUserApiKeys, {});
+	const authorizations = useQuery(api.thirdPartyAuth.getUserAuthorizations, {});
 	const createApiKey = useMutation(api.apiKeys.createApiKey);
 	const revokeApiKey = useMutation(api.apiKeys.revokeApiKey);
+	const revokeAuthorization = useMutation(api.thirdPartyAuth.revokeAuthorization);
 	const [keyName, setKeyName] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
 	const [revokingKeys, setRevokingKeys] = useState<Set<Id<"apiKeys">>>(new Set());
+	const [revokingAuths, setRevokingAuths] = useState<Set<Id<"thirdPartyAuthorizations">>>(new Set());
 
 	const handleCreate = async () => {
 		if (!currentUser) {
@@ -63,6 +66,27 @@ export default function ApiKeysPage() {
 			setRevokingKeys((prev) => {
 				const next = new Set(prev);
 				next.delete(keyId);
+				return next
+			})
+		}
+	}
+
+	const handleRevokeAuthorization = async (authId: Id<"thirdPartyAuthorizations">) => {
+		if (!confirm("Are you sure you want to revoke this authorization? The application will no longer be able to access your account.")) {
+			return
+		}
+
+		setRevokingAuths((prev) => new Set(prev).add(authId));
+		try {
+			await revokeAuthorization({ authorizationId: authId });
+			toast.success("Authorization revoked");
+		} catch (error: any) {
+			console.error("Error revoking authorization:", error);
+			toast.error(error.message || "Failed to revoke authorization");
+		} finally {
+			setRevokingAuths((prev) => {
+				const next = new Set(prev);
+				next.delete(authId);
 				return next
 			})
 		}
@@ -183,6 +207,75 @@ export default function ApiKeysPage() {
 											disabled={revokingKeys.has(key._id)}
 										>
 											{revokingKeys.has(key._id) ? "Revoking..." : "Revoke"}
+										</Button>
+									)}
+								</div>
+							))}
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			<Card className="mt-6">
+				<CardHeader>
+					<CardTitle>Third-Party Authorizations</CardTitle>
+					<CardDescription>
+						{authorizations === undefined
+							? "Loading..."
+							: authorizations.length === 0
+								? "No third-party applications authorized"
+								: `${authorizations.filter((a: any) => a.active).length} active authorization${authorizations.filter((a: any) => a.active).length === 1 ? "" : "s"}`}
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{authorizations === undefined ? (
+						<div className="text-center py-4 text-muted-foreground">Loading...</div>
+					) : authorizations.length === 0 ? (
+						<div className="text-center py-4 text-muted-foreground">
+							No third-party applications have been authorized yet
+						</div>
+					) : (
+						<div className="space-y-4">
+							{authorizations.map((auth: any) => (
+								<div
+									key={auth._id}
+									className={`flex items-center justify-between rounded-lg border p-4 ${!auth.active ? "opacity-50" : ""}`}
+								>
+									<div className="flex-1">
+										<div className="flex items-center gap-2">
+											<h3 className="font-medium capitalize">{auth.platform}</h3>
+											{!auth.active && (
+												<span className="text-xs bg-red-500/10 text-red-500 px-2 py-0.5 rounded">
+													Revoked
+												</span>
+											)}
+										</div>
+										<p className="text-sm text-muted-foreground mt-1">
+											{auth.apiKeyName}
+										</p>
+										<div className="flex flex-wrap gap-1 mt-2">
+											{auth.scopes.map((scope: string) => (
+												<span
+													key={scope}
+													className="text-xs bg-muted px-2 py-0.5 rounded"
+												>
+													{scope}
+												</span>
+											))}
+										</div>
+										<p className="text-xs text-muted-foreground mt-2">
+											Created {new Date(auth.createdAt).toLocaleDateString()}
+											{auth.lastUsedAt && ` • Last used ${new Date(auth.lastUsedAt).toLocaleDateString()}`}
+										</p>
+									</div>
+									{auth.active && (
+										<Button
+											variant="destructive"
+											size="sm"
+											onClick={() => handleRevokeAuthorization(auth._id)}
+											disabled={revokingAuths.has(auth._id)}
+										>
+											{revokingAuths.has(auth._id) ? "Revoking..." : "Revoke"}
 										</Button>
 									)}
 								</div>
