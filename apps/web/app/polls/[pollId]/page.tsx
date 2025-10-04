@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ pollId: s
 		? `${poll.description} | ${outcomesSummary}`
 		: `Current predictions: ${outcomesSummary}`;
 
-	const ogImageUrl = `https://polymart.xyz/api/og/poll?id=${pollId}`;
+	const ogImageUrl = `https://polymart.xyz/api/og?id=${pollId}`;
 
 	return {
 		title: `${poll.title} | Polymart`,
