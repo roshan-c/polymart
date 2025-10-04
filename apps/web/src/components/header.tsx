@@ -10,13 +10,15 @@ export default function Header() {
 	const links = [
 		{ to: "/", label: "Home" },
 		{ to: "/profile", label: "Profile" },
-		{ to: "/admin", label: "Admin" },
 		{ to: "/keys", label: "API" },
 	] as const;
 
 	return (
 		<div>
 			<div className="flex flex-row items-center justify-between px-2 py-1">
+				<Link to="/" className="flex items-center">
+					<img src="/hero.png" alt="Polymart" className="h-8" />
+				</Link>
 				<nav className="flex gap-4 text-lg">
 					{links.map(({ to, label }) => {
 						return (
