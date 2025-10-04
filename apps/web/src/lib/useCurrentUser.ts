@@ -25,13 +25,13 @@ export function useCurrentUser() {
 
 	useEffect(() => {
 		if (user && clerkUser && !discordIdUpdated.current) {
+			const externalAccountsArray = Array.from(clerkUser.externalAccounts || []);
 			console.log("Checking Discord ID...", {
-				hasDiscordAccount: !!clerkUser.externalAccounts.find(a => a.provider === 'oauth_discord'),
-				externalAccounts: clerkUser.externalAccounts,
+				externalAccountsArray,
 				currentDiscordId: user.discordId
 			});
 			
-			const discordAccount = clerkUser.externalAccounts.find(
+			const discordAccount = externalAccountsArray.find(
 				(account) => account.provider === 'oauth_discord'
 			);
 			
