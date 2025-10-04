@@ -49,7 +49,8 @@ function PollDetailComponent() {
 			setBetAmount("");
 			setSelectedOutcome(null);
 		} catch (error: any) {
-			toast.error(error.message || "Failed to place bet");
+			const errorMessage = error?.message || error?.toString() || "Failed to place bet";
+			toast.error(errorMessage);
 		} finally {
 			setIsPlacingBet(false);
 		}
