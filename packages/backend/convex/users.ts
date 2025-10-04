@@ -36,10 +36,13 @@ async function ensureUserExists(ctx: MutationCtx) {
 		return existing._id;
 	}
 	
+	const email = identity.email || "";
+	const name = identity.name || identity.nickname || identity.givenName || "User";
+	
 	const userId = await ctx.db.insert("users", {
 		clerkId: identity.subject,
-		email: identity.email || "",
-		name: identity.name || "User",
+		email,
+		name,
 		pointBalance: INITIAL_POINT_BALANCE,
 		isAdmin: false,
 		createdAt: Date.now(),
@@ -51,9 +54,14 @@ async function ensureUserExists(ctx: MutationCtx) {
 export const syncUser = mutation({
 	args: {},
 	handler: async (ctx) => {
-		const userId = await ensureUserExists(ctx);
-		const user = await ctx.db.get(userId);
-		return user;
+		try {
+			const userId = await ensureUserExists(ctx);
+			const user = await ctx.db.get(userId);
+			return user;
+		} catch (error) {
+			console.error("syncUser error:", error);
+			throw error;
+		}
 	},
 });
 
