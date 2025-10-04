@@ -24,24 +24,28 @@ export const placeBet = mutation({
 			throw new Error("Not authenticated");
 		}
 
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
-			.first();
+	const user = await ctx.db
+		.query("users")
+		.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+		.first();
 
-		if (!user) {
-			throw new Error("User not found");
-		}
+	if (!user) {
+		throw new Error("User not found");
+	}
 
-		if (args.pointsWagered <= 0) {
-			throw new Error("Bet amount must be positive");
-		}
+	if (args.pointsWagered <= 0) {
+		throw new Error("Bet amount must be positive");
+	}
 
-		if (user.pointBalance < args.pointsWagered) {
-			throw new Error("Insufficient points");
-		}
+	if (!Number.isInteger(args.pointsWagered)) {
+		throw new ConvexError("Bet amount must be a whole number");
+	}
 
-		const poll = await ctx.db.get(args.pollId);
+	if (user.pointBalance < args.pointsWagered) {
+		throw new Error("Insufficient points");
+	}
+
+	const poll = await ctx.db.get(args.pollId);
 		if (!poll) {
 			throw new Error("Poll not found");
 		}
@@ -224,20 +228,24 @@ export const placeBetWithAuth = mutation({
 		pointsWagered: v.number(),
 	},
 	handler: async (ctx, args) => {
-		const user = await ctx.db.get(args.userId);
-		if (!user) {
-			throw new Error("User not found");
-		}
+	const user = await ctx.db.get(args.userId);
+	if (!user) {
+		throw new Error("User not found");
+	}
 
-		if (args.pointsWagered <= 0) {
-			throw new Error("Bet amount must be positive");
-		}
+	if (args.pointsWagered <= 0) {
+		throw new Error("Bet amount must be positive");
+	}
 
-		if (user.pointBalance < args.pointsWagered) {
-			throw new Error("Insufficient points");
-		}
+	if (!Number.isInteger(args.pointsWagered)) {
+		throw new ConvexError("Bet amount must be a whole number");
+	}
 
-		const poll = await ctx.db.get(args.pollId);
+	if (user.pointBalance < args.pointsWagered) {
+		throw new Error("Insufficient points");
+	}
+
+	const poll = await ctx.db.get(args.pollId);
 		if (!poll) {
 			throw new Error("Poll not found");
 		}

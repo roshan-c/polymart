@@ -238,6 +238,7 @@ function PollDetailComponent() {
 											id="betAmount"
 											type="number"
 											min="1"
+											step="1"
 											value={betAmount}
 											onChange={(e) => setBetAmount(e.target.value)}
 											placeholder="Enter amount"
