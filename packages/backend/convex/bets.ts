@@ -200,3 +200,100 @@ export const getOutcomeBets = query({
 		return betsWithUsers;
 	},
 });
+
+export const placeBetWithAuth = mutation({
+	args: {
+		userId: v.id("users"),
+		pollId: v.id("polls"),
+		outcomeId: v.id("outcomes"),
+		pointsWagered: v.number(),
+	},
+	handler: async (ctx, args) => {
+		const user = await ctx.db.get(args.userId);
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		if (args.pointsWagered <= 0) {
+			throw new Error("Bet amount must be positive");
+		}
+
+		if (user.pointBalance < args.pointsWagered) {
+			throw new Error("Insufficient points");
+		}
+
+		const poll = await ctx.db.get(args.pollId);
+		if (!poll) {
+			throw new Error("Poll not found");
+		}
+
+		if (poll.status !== "active") {
+			throw new Error("Poll is not active");
+		}
+
+		const outcome = await ctx.db.get(args.outcomeId);
+		if (!outcome) {
+			throw new Error("Outcome not found");
+		}
+
+		if (outcome.pollId !== args.pollId) {
+			throw new Error("Outcome does not belong to this poll");
+		}
+
+		const sharesReceived = calculateSharesReceived(
+			args.pointsWagered,
+			outcome.totalShares
+		);
+
+		await ctx.db.patch(args.userId, {
+			pointBalance: user.pointBalance - args.pointsWagered,
+		});
+
+		await ctx.db.patch(args.outcomeId, {
+			totalShares: outcome.totalShares + sharesReceived,
+		});
+
+		const betId = await ctx.db.insert("bets", {
+			userId: args.userId,
+			pollId: args.pollId,
+			outcomeId: args.outcomeId,
+			pointsWagered: args.pointsWagered,
+			sharesReceived,
+			createdAt: Date.now(),
+			settled: false,
+		});
+
+		const allBets = await ctx.db
+			.query("bets")
+			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+			.collect();
+
+		const totalVolume = allBets.reduce(
+			(sum, bet) => sum + bet.pointsWagered,
+			0
+		);
+
+		const allOutcomes = await ctx.db
+			.query("outcomes")
+			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+			.collect();
+
+		for (const out of allOutcomes) {
+			const outcomeBets = allBets.filter((bet) => bet.outcomeId === out._id);
+			const outcomeVolume = outcomeBets.reduce(
+				(sum, bet) => sum + bet.pointsWagered,
+				0
+			);
+			const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
+
+			await ctx.db.insert("probabilityHistory", {
+				pollId: args.pollId,
+				outcomeId: out._id,
+				probability,
+				timestamp: Date.now(),
+			});
+		}
+
+		return await ctx.db.get(betId);
+	},
+});

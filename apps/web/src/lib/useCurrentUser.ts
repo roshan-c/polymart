@@ -25,13 +25,21 @@ export function useCurrentUser() {
 
 	useEffect(() => {
 		if (user && clerkUser && !discordIdUpdated.current) {
+			console.log("Checking Discord ID...", {
+				hasDiscordAccount: !!clerkUser.externalAccounts.find(a => a.provider === 'oauth_discord'),
+				externalAccounts: clerkUser.externalAccounts,
+				currentDiscordId: user.discordId
+			});
+			
 			const discordAccount = clerkUser.externalAccounts.find(
 				(account) => account.provider === 'oauth_discord'
 			);
 			
 			if (discordAccount?.externalId && !user.discordId) {
+				console.log("Updating Discord ID:", discordAccount.externalId);
 				discordIdUpdated.current = true;
 				updateDiscordId({ discordId: discordAccount.externalId })
+					.then(() => console.log("Discord ID updated successfully"))
 					.catch(console.error);
 			}
 		}

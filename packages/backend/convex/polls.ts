@@ -227,3 +227,36 @@ export const getProbabilityHistory = query({
 		};
 	},
 });
+
+export const createWithAuth = mutation({
+	args: {
+		userId: v.id("users"),
+		title: v.string(),
+		description: v.optional(v.string()),
+		outcomes: v.array(v.string()),
+	},
+	handler: async (ctx, args) => {
+		if (args.outcomes.length < 2 || args.outcomes.length > 10) {
+			throw new Error("Polls must have between 2 and 10 outcomes");
+		}
+
+		const pollId = await ctx.db.insert("polls", {
+			title: args.title,
+			description: args.description,
+			creatorId: args.userId,
+			status: "active",
+			createdAt: Date.now(),
+		});
+
+		for (let i = 0; i < args.outcomes.length; i++) {
+			await ctx.db.insert("outcomes", {
+				pollId,
+				title: args.outcomes[i],
+				totalShares: 100,
+				order: i,
+			});
+		}
+
+		return pollId;
+	},
+});

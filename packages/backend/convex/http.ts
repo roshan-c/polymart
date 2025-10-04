@@ -50,6 +50,24 @@ http.route({
 	path: "/api/polls",
 	method: "POST",
 	handler: httpAction(async (ctx, request) => {
+		const authHeader = request.headers.get("Authorization");
+		if (!authHeader || !authHeader.startsWith("Bearer ")) {
+			return new Response(
+				JSON.stringify({ error: "Missing or invalid authorization header" }),
+				{ status: 401, headers: { "Content-Type": "application/json" } }
+			);
+		}
+
+		const apiKey = authHeader.substring(7);
+		const validation = await ctx.runQuery(api.apiKeys.validateApiKey, { key: apiKey });
+		
+		if (!validation || !validation.user) {
+			return new Response(
+				JSON.stringify({ error: "Invalid API key" }),
+				{ status: 401, headers: { "Content-Type": "application/json" } }
+			);
+		}
+
 		const body = await request.json();
 		const { title, description, outcomes } = body;
 		
@@ -67,16 +85,24 @@ http.route({
 			);
 		}
 		
-		const pollId = await ctx.runMutation(api.polls.create, {
-			title,
-			description,
-			outcomes,
-		});
-		
-		return new Response(JSON.stringify({ pollId }), {
-			status: 201,
-			headers: { "Content-Type": "application/json" },
-		});
+		try {
+			const pollId = await ctx.runMutation(api.polls.createWithAuth, {
+				userId: validation.user._id,
+				title,
+				description,
+				outcomes,
+			});
+			
+			return new Response(JSON.stringify({ pollId }), {
+				status: 201,
+				headers: { "Content-Type": "application/json" },
+			});
+		} catch (error: any) {
+			return new Response(
+				JSON.stringify({ error: error.message }),
+				{ status: 400, headers: { "Content-Type": "application/json" } }
+			);
+		}
 	}),
 });
 
@@ -84,6 +110,24 @@ http.route({
 	path: "/api/bets",
 	method: "POST",
 	handler: httpAction(async (ctx, request) => {
+		const authHeader = request.headers.get("Authorization");
+		if (!authHeader || !authHeader.startsWith("Bearer ")) {
+			return new Response(
+				JSON.stringify({ error: "Missing or invalid authorization header" }),
+				{ status: 401, headers: { "Content-Type": "application/json" } }
+			);
+		}
+
+		const apiKey = authHeader.substring(7);
+		const validation = await ctx.runQuery(api.apiKeys.validateApiKey, { key: apiKey });
+		
+		if (!validation || !validation.user) {
+			return new Response(
+				JSON.stringify({ error: "Invalid API key" }),
+				{ status: 401, headers: { "Content-Type": "application/json" } }
+			);
+		}
+
 		const body = await request.json();
 		const { pollId, outcomeId, pointsWagered } = body;
 		
@@ -95,7 +139,8 @@ http.route({
 		}
 		
 		try {
-			const bet = await ctx.runMutation(api.bets.placeBet, {
+			const bet = await ctx.runMutation(api.bets.placeBetWithAuth, {
+				userId: validation.user._id,
 				pollId,
 				outcomeId,
 				pointsWagered: Number(pointsWagered),
