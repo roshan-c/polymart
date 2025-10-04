@@ -1,11 +1,10 @@
 import { ImageResponse } from "@vercel/og";
-import type { NextRequest } from "next/server";
 
 export const config = {
 	runtime: "edge",
 };
 
-export default async function handler(req: NextRequest) {
+export default async function handler(req: Request) {
 	try {
 		const { searchParams } = new URL(req.url);
 		const pollId = searchParams.get("id");
