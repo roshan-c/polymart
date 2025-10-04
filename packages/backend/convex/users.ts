@@ -54,9 +54,18 @@ async function ensureUserExists(ctx: MutationCtx) {
 export const syncUser = mutation({
 	args: {},
 	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		console.log("syncUser called with identity:", { 
+			subject: identity?.subject,
+			email: identity?.email,
+			name: identity?.name,
+			hasIdentity: !!identity
+		});
+		
 		try {
 			const userId = await ensureUserExists(ctx);
 			const user = await ctx.db.get(userId);
+			console.log("syncUser success:", { userId, userName: user?.name });
 			return user;
 		} catch (error) {
 			console.error("syncUser error:", error);

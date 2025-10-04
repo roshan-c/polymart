@@ -1,6 +1,6 @@
 # Polymart API Documentation
 
-Base URL: `https://youthful-lark-845.convex.cloud`
+Base URL: `https://youthful-lark-845.convex.site`
 
 ## Authentication
 
@@ -339,10 +339,10 @@ Status: `400`
 
 ```bash
 # Get all active polls
-curl "https://youthful-lark-845.convex.cloud/api/polls?status=active"
+curl "https://youthful-lark-845.convex.site/api/polls?status=active"
 
 # Create a poll
-curl -X POST "https://youthful-lark-845.convex.cloud/api/polls" \
+curl -X POST "https://youthful-lark-845.convex.site/api/polls" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -352,7 +352,7 @@ curl -X POST "https://youthful-lark-845.convex.cloud/api/polls" \
   }'
 
 # Place a bet
-curl -X POST "https://youthful-lark-845.convex.cloud/api/bets" \
+curl -X POST "https://youthful-lark-845.convex.site/api/bets" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -365,7 +365,7 @@ curl -X POST "https://youthful-lark-845.convex.cloud/api/bets" \
 ### JavaScript
 
 ```javascript
-const API_BASE = 'https://youthful-lark-845.convex.cloud';
+const API_BASE = 'https://youthful-lark-845.convex.site';
 const API_KEY = 'your_api_key_here';
 
 // Get all polls
@@ -408,7 +408,7 @@ const { bet } = await betResponse.json();
 ```python
 import requests
 
-API_BASE = 'https://youthful-lark-845.convex.cloud'
+API_BASE = 'https://youthful-lark-845.convex.site'
 API_KEY = 'your_api_key_here'
 
 # Get all polls

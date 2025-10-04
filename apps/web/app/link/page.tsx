@@ -36,6 +36,8 @@ function LinkPageContent() {
 		setToken(tokenParam);
 	}, [searchParams]);
 
+	const verifyToken = useMutation(api.thirdPartyAuth.verifyLinkToken);
+
 	const handleAuthorize = async () => {
 		if (!token) {
 			setError("No link token provided");
@@ -46,30 +48,12 @@ function LinkPageContent() {
 		setError(null);
 
 		try {
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_CONVEX_URL?.replace(
-					".cloud",
-					".site"
-				)}/api/link/verify`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						token,
-						scopes: selectedScopes,
-					}),
-				}
-			);
+			const result = await verifyToken({
+				token,
+				scopes: selectedScopes,
+			});
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.error || "Failed to verify link token");
-			}
-
-			setPlatform(data.platform);
+			setPlatform(result.platform);
 			setSuccess(true);
 		} catch (err: any) {
 			setError(err.message);

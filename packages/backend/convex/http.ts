@@ -309,39 +309,6 @@ http.route({
 });
 
 http.route({
-	path: "/api/link/verify",
-	method: "POST",
-	handler: httpAction(async (ctx, request) => {
-		const body = await request.json();
-		const { token, scopes } = body;
-		
-		if (!token) {
-			return new Response(
-				JSON.stringify({ error: "Missing required field: token" }),
-				{ status: 400, headers: { "Content-Type": "application/json" } }
-			);
-		}
-		
-		try {
-			const result = await ctx.runMutation(api.thirdPartyAuth.verifyLinkToken, {
-				token,
-				scopes,
-			});
-			
-			return new Response(JSON.stringify(result), {
-				status: 200,
-				headers: { "Content-Type": "application/json" },
-			});
-		} catch (error: any) {
-			return new Response(
-				JSON.stringify({ error: error.message }),
-				{ status: 400, headers: { "Content-Type": "application/json" } }
-			);
-		}
-	}),
-});
-
-http.route({
 	path: "/api/auth/:platform/:platformUserId",
 	method: "GET",
 	handler: httpAction(async (ctx, request) => {

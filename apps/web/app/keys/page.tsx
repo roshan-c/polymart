@@ -296,7 +296,7 @@ export default function ApiKeysPage() {
 					<div>
 						<h3 className="text-lg font-semibold mb-2">Base URL</h3>
 						<code className="block bg-muted p-3 rounded text-sm font-mono">
-							https://youthful-lark-845.convex.cloud
+							https://youthful-lark-845.convex.site
 						</code>
 					</div>
 
@@ -388,7 +388,7 @@ export default function ApiKeysPage() {
 						<details className="border rounded-lg p-4">
 							<summary className="font-medium cursor-pointer">JavaScript / Node.js</summary>
 							<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
-{`const API_BASE = 'https://youthful-lark-845.convex.cloud';
+{`const API_BASE = 'https://youthful-lark-845.convex.site';
 const API_KEY = 'your_api_key_here';
 
 // Get all polls
@@ -416,7 +416,7 @@ const { pollId } = await createResponse.json();`}
 							<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
 {`import requests
 
-API_BASE = 'https://youthful-lark-845.convex.cloud'
+API_BASE = 'https://youthful-lark-845.convex.site'
 API_KEY = 'your_api_key_here'
 
 # Get all polls
@@ -440,10 +440,10 @@ poll_id = create_response.json()['pollId']`}
 							<summary className="font-medium cursor-pointer">cURL</summary>
 							<pre className="bg-muted p-3 rounded text-xs font-mono mt-2 overflow-x-auto">
 {`# Get all polls
-curl "https://youthful-lark-845.convex.cloud/api/polls"
+curl "https://youthful-lark-845.convex.site/api/polls"
 
 # Create a poll
-curl -X POST "https://youthful-lark-845.convex.cloud/api/polls" \\
+curl -X POST "https://youthful-lark-845.convex.site/api/polls" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{

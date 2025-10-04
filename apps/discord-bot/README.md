@@ -50,7 +50,7 @@ cp .env.example .env
 DISCORD_TOKEN=your_discord_bot_token_here
 DISCORD_CLIENT_ID=your_discord_client_id_here
 POLYMART_API_KEY=your_polymart_api_key_here
-POLYMART_API_BASE=https://youthful-lark-845.convex.cloud
+POLYMART_API_BASE=https://youthful-lark-845.convex.site
 ```
 
 ### Getting Discord Credentials
