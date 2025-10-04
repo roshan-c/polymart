@@ -1,6 +1,8 @@
-import { Link } from "@tanstack/react-router";
+"use client";
+
+import NextLink from "next/link";
 import { ModeToggle } from "./mode-toggle";
-import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/clerk-react";
+import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 import { useCurrentUser } from "../lib/useCurrentUser";
 
 export default function Header() {
@@ -16,15 +18,15 @@ export default function Header() {
 	return (
 		<div>
 			<div className="flex flex-row items-center justify-between px-2 py-1">
-				<Link to="/" className="flex items-center">
+				<NextLink href="/" className="flex items-center">
 					<img src="/hero.png" alt="Polymart" className="h-8" />
-				</Link>
+				</NextLink>
 				<nav className="flex gap-4 text-lg">
 					{links.map(({ to, label }) => {
 						return (
-							<Link key={to} to={to}>
+							<NextLink key={to} href={to}>
 								{label}
-							</Link>
+							</NextLink>
 						);
 					})}
 				</nav>

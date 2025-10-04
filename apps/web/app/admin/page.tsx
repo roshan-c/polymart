@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+"use client";
+
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/nextjs";
 
-export const Route = createFileRoute("/admin")({
-	component: AdminComponent,
-});
-
-function AdminComponent() {
+export default function AdminPage() {
 	const currentUser = useCurrentUser();
 	const polls = useQuery(api.polls.getAll, { status: "active" });
 	const resolvePoll = useMutation(api.admin.resolvePoll);

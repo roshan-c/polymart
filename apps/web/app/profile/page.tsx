@@ -1,17 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+"use client";
+
 import { useQuery } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/profile")({
-	component: ProfileComponent,
-});
-
-function ProfileComponent() {
+export default function ProfilePage() {
 	const currentUser = useCurrentUser();
 	const user = useQuery(api.users.getUser, currentUser ? { userId: currentUser._id } : "skip");
 	const stats = useQuery(api.users.getUserStats, currentUser ? { userId: currentUser._id } : "skip");

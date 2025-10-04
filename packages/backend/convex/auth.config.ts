@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: "https://clerk.polymart.xyz",
+      domain: "https://flying-calf-33.clerk.accounts.dev",
       applicationID: "convex",
     },
   ],

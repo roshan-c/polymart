@@ -27,6 +27,11 @@ export const create = mutation({
 			throw new Error("Polls must have between 2 and 10 outcomes");
 		}
 
+		const uniqueOutcomes = new Set(args.outcomes);
+		if (uniqueOutcomes.size !== args.outcomes.length) {
+			throw new Error("Outcome names must be unique");
+		}
+
 		const pollId = await ctx.db.insert("polls", {
 			title: args.title,
 			description: args.description,
@@ -205,14 +210,25 @@ export const getProbabilityHistory = query({
 			.collect();
 
 		const groupedByTimestamp: Record<number, Record<string, number>> = {};
+		const outcomeKeyMap = new Map<string, string>();
+
+		for (const outcome of outcomes) {
+			let displayKey = outcome.title;
+			let counter = 1;
+			while (Array.from(outcomeKeyMap.values()).includes(displayKey)) {
+				displayKey = `${outcome.title} #${counter}`;
+				counter++;
+			}
+			outcomeKeyMap.set(outcome._id, displayKey);
+		}
 
 		for (const entry of history) {
 			if (!groupedByTimestamp[entry.timestamp]) {
 				groupedByTimestamp[entry.timestamp] = {};
 			}
-			const outcome = outcomes.find((o) => o._id === entry.outcomeId);
-			if (outcome) {
-				groupedByTimestamp[entry.timestamp][outcome.title] = entry.probability;
+			const displayKey = outcomeKeyMap.get(entry.outcomeId);
+			if (displayKey) {
+				groupedByTimestamp[entry.timestamp][displayKey] = entry.probability;
 			}
 		}
 
@@ -225,7 +241,7 @@ export const getProbabilityHistory = query({
 
 		return {
 			history: formattedHistory,
-			outcomes: outcomes.map((o) => o.title),
+			outcomes: outcomes.map((o) => outcomeKeyMap.get(o._id) || o.title),
 		};
 	},
 });
@@ -241,6 +257,11 @@ export const createWithAuth = mutation({
 	handler: async (ctx, args) => {
 		if (args.outcomes.length < 2 || args.outcomes.length > 10) {
 			throw new Error("Polls must have between 2 and 10 outcomes");
+		}
+
+		const uniqueOutcomes = new Set(args.outcomes);
+		if (uniqueOutcomes.size !== args.outcomes.length) {
+			throw new Error("Outcome names must be unique");
 		}
 
 		const pollId = await ctx.db.insert("polls", {

@@ -1,13 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-
-export const Route = createFileRoute("/polls/")({
-	component: PollsIndexComponent,
-});
 
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6"];
 
@@ -18,7 +16,7 @@ function PollCard({ poll }: { poll: any }) {
 	const outcomes = probabilityHistory?.outcomes || [];
 
 	return (
-		<Link to="/polls/$pollId" params={{ pollId: poll._id }}>
+		<Link href={`/polls/${poll._id}`}>
 			<Card className="h-full transition-shadow hover:shadow-lg">
 				<CardHeader>
 					<CardTitle className="line-clamp-2">{poll.title}</CardTitle>
@@ -28,10 +26,10 @@ function PollCard({ poll }: { poll: any }) {
 					{chartData.length > 0 && (
 						<div className="mb-4 space-y-3">
 							{outcomes.map((outcome: string, index: number) => {
-								const latestData = chartData[chartData.length - 1];
+								const latestData = chartData[chartData.length - 1] as Record<string, number> | undefined;
 								const probability = latestData?.[outcome] || 0;
 								return (
-									<div key={outcome} className="space-y-1">
+									<div key={`${outcome}-${index}`} className="space-y-1">
 										<div className="flex items-center justify-between text-sm">
 											<span className="font-medium truncate">{outcome}</span>
 											<span className="font-bold" style={{ color: COLORS[index % COLORS.length] }}>
@@ -72,7 +70,7 @@ function PollCard({ poll }: { poll: any }) {
 	);
 }
 
-function PollsIndexComponent() {
+export default function PollsPage() {
 	const polls = useQuery(api.polls.getAll, {});
 
 	if (polls === undefined) {
@@ -106,7 +104,7 @@ function PollsIndexComponent() {
 		<div className="container mx-auto max-w-6xl px-4 py-8">
 			<div className="mb-6 flex items-center justify-between">
 				<h1 className="text-3xl font-bold">Markets</h1>
-				<Link to="/polls/create">
+				<Link href="/polls/create">
 					<Button>Create Poll</Button>
 				</Link>
 			</div>
@@ -138,7 +136,7 @@ function PollsIndexComponent() {
 			{polls.length === 0 && (
 				<div className="flex flex-col items-center justify-center py-12 text-center">
 					<p className="mb-4 text-lg text-muted-foreground">No markets yet</p>
-					<Link to="/polls/create">
+					<Link href="/polls/create">
 						<Button>Create the first poll</Button>
 					</Link>
 				</div>

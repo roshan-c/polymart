@@ -91,7 +91,7 @@ export function ProbabilityChart({ data, outcomes }: ProbabilityChartProps) {
 						<Legend />
 						{outcomes.map((outcome, index) => (
 							<Line
-								key={outcome}
+								key={`${outcome}-${index}`}
 								type="monotone"
 								dataKey={outcome}
 								stroke={COLORS[index % COLORS.length]}

@@ -1,10 +1,9 @@
 import { ImageResponse } from "@vercel/og";
+import { NextRequest } from "next/server";
 
-export const config = {
-	runtime: "edge",
-};
+export const runtime = "edge";
 
-export default async function handler(req: Request) {
+export async function GET(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
 		const pollId = searchParams.get("id");
@@ -13,7 +12,7 @@ export default async function handler(req: Request) {
 			return new Response("Missing poll id parameter", { status: 400 });
 		}
 
-		const convexUrl = process.env.VITE_CONVEX_URL || process.env.CONVEX_URL;
+		const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 		if (!convexUrl) {
 			return new Response("Convex URL not configured", { status: 500 });
 		}

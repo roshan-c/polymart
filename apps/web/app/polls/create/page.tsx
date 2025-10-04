@@ -1,4 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -9,14 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/nextjs";
 
-export const Route = createFileRoute("/polls/create")({
-	component: CreatePollComponent,
-});
-
-function CreatePollComponent() {
-	const navigate = useNavigate();
+export default function CreatePollPage() {
+	const router = useRouter();
 	const currentUser = useCurrentUser();
 	const createPoll = useMutation(api.polls.create);
 	const [title, setTitle] = useState("");
@@ -74,7 +72,7 @@ function CreatePollComponent() {
 				allowMultipleVotes,
 			});
 			toast.success("Poll created successfully!");
-			navigate({ to: "/polls/$pollId", params: { pollId } });
+			router.push(`/polls/${pollId}`);
 		} catch (error: any) {
 			console.error("Error creating poll:", error);
 			toast.error(error.message || "Failed to create poll");
@@ -85,7 +83,7 @@ function CreatePollComponent() {
 
 	return (
 		<div className="container mx-auto max-w-2xl px-4 py-8">
-			<Button variant="ghost" onClick={() => navigate({ to: "/polls" })} className="mb-4">
+			<Button variant="ghost" onClick={() => router.push("/polls")} className="mb-4">
 				← Back to Markets
 			</Button>
 
