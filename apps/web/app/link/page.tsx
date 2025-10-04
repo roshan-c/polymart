@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
@@ -17,7 +17,7 @@ const AVAILABLE_SCOPES = [
 	{ id: "bets:place", label: "Place bets", description: "Place bets on your behalf" },
 ];
 
-export default function LinkPage() {
+function LinkPageContent() {
 	const searchParams = useSearchParams();
 	const { user, isLoaded } = useUser();
 	const [token, setToken] = useState<string | null>(null);
@@ -221,5 +221,13 @@ export default function LinkPage() {
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+export default function LinkPage() {
+	return (
+		<Suspense fallback={<Loader />}>
+			<LinkPageContent />
+		</Suspense>
 	);
 }

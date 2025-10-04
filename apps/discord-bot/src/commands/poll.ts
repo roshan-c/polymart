@@ -1,17 +1,17 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { PolymartAPI } from '../api';
 
 export const data = new SlashCommandBuilder()
-  .setName('poll')
-  .setDescription('View details of a specific poll')
-  .addStringOption(option =>
-    option
-      .setName('id')
-      .setDescription('Poll ID')
-      .setRequired(true)
-  );
+	.setName('poll')
+	.setDescription('View details of a specific poll')
+	.addStringOption(option =>
+		option
+			.setName('id')
+			.setDescription('Poll ID')
+			.setRequired(true)
+	);
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
 
   try {

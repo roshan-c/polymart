@@ -1,30 +1,30 @@
-import { SlashCommandBuilder, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { PolymartAPI } from '../api';
 
 export const data = new SlashCommandBuilder()
-  .setName('bet')
-  .setDescription('Place a bet on a poll outcome')
-  .addStringOption(option =>
-    option
-      .setName('poll-id')
-      .setDescription('Poll ID')
-      .setRequired(true)
-  )
-  .addStringOption(option =>
-    option
-      .setName('outcome-id')
-      .setDescription('Outcome ID to bet on')
-      .setRequired(true)
-  )
-  .addIntegerOption(option =>
-    option
-      .setName('points')
-      .setDescription('Points to wager')
-      .setRequired(true)
-      .setMinValue(1)
-  );
+	.setName('bet')
+	.setDescription('Place a bet on a poll outcome')
+	.addStringOption(option =>
+		option
+			.setName('poll-id')
+			.setDescription('Poll ID')
+			.setRequired(true)
+	)
+	.addStringOption(option =>
+		option
+			.setName('outcome-id')
+			.setDescription('Outcome ID to bet on')
+			.setRequired(true)
+	)
+	.addIntegerOption(option =>
+		option
+			.setName('points')
+			.setDescription('Points to wager')
+			.setRequired(true)
+			.setMinValue(1)
+	);
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
 	await interaction.deferReply();
 
 	try {

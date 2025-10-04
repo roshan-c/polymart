@@ -1,21 +1,21 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { PolymartAPI } from '../api';
 
 export const data = new SlashCommandBuilder()
-  .setName('polls')
-  .setDescription('List all active prediction markets')
-  .addStringOption(option =>
-    option
-      .setName('status')
-      .setDescription('Filter by status')
-      .addChoices(
-        { name: 'Active', value: 'active' },
-        { name: 'Resolved', value: 'resolved' },
-        { name: 'Cancelled', value: 'cancelled' }
-      )
-  );
+	.setName('polls')
+	.setDescription('List all active prediction markets')
+	.addStringOption(option =>
+		option
+			.setName('status')
+			.setDescription('Filter by status')
+			.addChoices(
+				{ name: 'Active', value: 'active' },
+				{ name: 'Resolved', value: 'resolved' },
+				{ name: 'Cancelled', value: 'cancelled' }
+			)
+	);
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
 
   try {

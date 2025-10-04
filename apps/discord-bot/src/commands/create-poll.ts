@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { PolymartAPI } from '../api';
 
 export const data = new SlashCommandBuilder()
@@ -27,7 +27,7 @@ export const data = new SlashCommandBuilder()
 			.setDescription('Allow users to vote on multiple outcomes (default: false)')
 	);
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
 	await interaction.deferReply();
 
 	try {

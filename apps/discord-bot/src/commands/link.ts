@@ -1,11 +1,11 @@
-import { SlashCommandBuilder, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { PolymartAPI } from '../api';
 
 export const data = new SlashCommandBuilder()
 	.setName('link')
 	.setDescription('Link your Discord account to Polymart');
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction) {
 	await interaction.deferReply({ ephemeral: true });
 
 	try {

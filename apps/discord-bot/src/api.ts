@@ -40,29 +40,29 @@ export class PolymartAPI {
 		this.apiKey = apiKey || config.polymartApiKey;
 	}
 
-  private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+	private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+		const url = `${this.baseUrl}${endpoint}`;
+		const headers: Record<string, string> = {
+			'Content-Type': 'application/json',
+			...(options.headers as Record<string, string>),
+		};
 
-    if (this.apiKey && !endpoint.includes('/api/polls?') && options.method !== 'GET') {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
-    }
+		if (this.apiKey && !endpoint.includes('/api/polls?') && options.method !== 'GET') {
+			headers['Authorization'] = `Bearer ${this.apiKey}`;
+		}
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+		const response = await fetch(url, {
+			...options,
+			headers,
+		});
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
-    }
+		if (!response.ok) {
+			const error = await response.json().catch(() => ({ error: 'Unknown error' })) as { error?: string };
+			throw new Error(error.error || `HTTP ${response.status}`);
+		}
 
-    return response.json();
-  }
+		return response.json() as Promise<T>;
+	}
 
   async getUserByDiscordId(discordId: string): Promise<User | null> {
     try {

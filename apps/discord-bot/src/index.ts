@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, Events, CommandInteraction } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Events, ChatInputCommandInteraction } from 'discord.js';
 import { config } from './config';
 import * as pollsCommand from './commands/polls';
 import * as pollCommand from './commands/poll';
@@ -8,7 +8,7 @@ import * as linkCommand from './commands/link';
 
 interface Command {
 	data: any;
-	execute: (interaction: CommandInteraction) => Promise<void>;
+	execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 }
 
 const client = new Client({
