@@ -309,13 +309,21 @@ http.route({
 });
 
 http.route({
-	path: "/api/auth/:platform/:platformUserId",
+	pathPrefix: "/api/auth/",
 	method: "GET",
 	handler: httpAction(async (ctx, request) => {
 		const url = new URL(request.url);
-		const pathParts = url.pathname.split("/");
-		const platform = pathParts[3];
-		const platformUserId = pathParts[4];
+		const pathParts = url.pathname.split("/").filter(Boolean);
+		
+		if (pathParts.length !== 4 || pathParts[0] !== "api" || pathParts[1] !== "auth") {
+			return new Response(
+				JSON.stringify({ error: "Invalid path format. Expected /api/auth/{platform}/{platformUserId}" }),
+				{ status: 400, headers: { "Content-Type": "application/json" } }
+			);
+		}
+		
+		const platform = pathParts[2];
+		const platformUserId = pathParts[3];
 		
 		const auth = await ctx.runQuery(api.thirdPartyAuth.getAuthorizationByPlatformUser, {
 			platform,
