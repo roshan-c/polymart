@@ -1,5 +1,28 @@
 import { mutation } from "./_generated/server";
 
+export const backfillAllowMultipleVotes = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const polls = await ctx.db.query("polls").collect();
+
+		let pollsUpdated = 0;
+
+		for (const poll of polls) {
+			if ((poll as any).allowMultipleVotes === undefined) {
+				await ctx.db.patch(poll._id, {
+					allowMultipleVotes: false,
+				});
+				pollsUpdated++;
+			}
+		}
+
+		return {
+			success: true,
+			pollsUpdated,
+		};
+	},
+});
+
 export const backfillProbabilityHistory = mutation({
 	args: {},
 	handler: async (ctx) => {

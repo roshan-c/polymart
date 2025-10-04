@@ -203,7 +203,11 @@ function PollDetailComponent() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Place Bet</CardTitle>
-							<CardDescription>Select an outcome and enter your bet amount</CardDescription>
+							<CardDescription>
+								{poll.allowMultipleVotes === true
+									? "Select an outcome and enter your bet amount"
+									: "Select one outcome and enter your bet amount (single-choice poll)"}
+							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							{!currentUser ? (

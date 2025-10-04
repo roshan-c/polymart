@@ -87,16 +87,16 @@ export class PolymartAPI {
     return data.poll;
   }
 
-  async createPoll(title: string, outcomes: string[], description?: string): Promise<string> {
-    const data = await this.fetch<{ pollId: string }>('/api/polls', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({ title, outcomes, description }),
-    });
-    return data.pollId;
-  }
+	async createPoll(title: string, outcomes: string[], description?: string, allowMultipleVotes?: boolean): Promise<string> {
+		const data = await this.fetch<{ pollId: string }>('/api/polls', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${this.apiKey}`,
+			},
+			body: JSON.stringify({ title, outcomes, description, allowMultipleVotes }),
+		});
+		return data.pollId;
+	}
 
   async placeBet(pollId: string, outcomeId: string, pointsWagered: number): Promise<any> {
     const data = await this.fetch<{ bet: any }>('/api/bets', {

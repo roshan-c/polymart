@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -21,6 +22,7 @@ function CreatePollComponent() {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [outcomes, setOutcomes] = useState(["", ""]);
+	const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
 	const [isCreating, setIsCreating] = useState(false);
 
 	const addOutcome = () => {
@@ -69,6 +71,7 @@ function CreatePollComponent() {
 				title: title.trim(),
 				description: description.trim() || undefined,
 				outcomes: validOutcomes,
+				allowMultipleVotes,
 			});
 			toast.success("Poll created successfully!");
 			navigate({ to: "/polls/$pollId", params: { pollId } });
@@ -124,6 +127,17 @@ function CreatePollComponent() {
 							placeholder="Add more context about this poll"
 							className="mt-1"
 						/>
+					</div>
+
+					<div className="flex items-center space-x-2">
+						<Checkbox
+							id="allowMultipleVotes"
+							checked={allowMultipleVotes}
+							onCheckedChange={(checked) => setAllowMultipleVotes(checked as boolean)}
+						/>
+						<Label htmlFor="allowMultipleVotes" className="cursor-pointer">
+							Allow users to vote on multiple outcomes
+						</Label>
 					</div>
 
 					<div>

@@ -69,7 +69,7 @@ http.route({
 		}
 
 		const body = await request.json();
-		const { title, description, outcomes } = body;
+		const { title, description, outcomes, allowMultipleVotes } = body;
 		
 		if (!title || !outcomes) {
 			return new Response(
@@ -91,6 +91,7 @@ http.route({
 				title,
 				description,
 				outcomes,
+				allowMultipleVotes,
 			});
 			
 			return new Response(JSON.stringify({ pollId }), {

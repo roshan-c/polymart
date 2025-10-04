@@ -24,6 +24,7 @@ export default defineSchema({
 			v.literal("resolved"),
 			v.literal("cancelled")
 		),
+		allowMultipleVotes: v.optional(v.boolean()),
 		createdAt: v.number(),
 		resolvedAt: v.optional(v.number()),
 		winningOutcomeId: v.optional(v.id("outcomes")),

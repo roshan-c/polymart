@@ -6,6 +6,7 @@ export const create = mutation({
 		title: v.string(),
 		description: v.optional(v.string()),
 		outcomes: v.array(v.string()),
+		allowMultipleVotes: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const identity = await ctx.auth.getUserIdentity();
@@ -31,6 +32,7 @@ export const create = mutation({
 			description: args.description,
 			creatorId: user._id,
 			status: "active",
+			allowMultipleVotes: args.allowMultipleVotes ?? false,
 			createdAt: Date.now(),
 		});
 
@@ -234,6 +236,7 @@ export const createWithAuth = mutation({
 		title: v.string(),
 		description: v.optional(v.string()),
 		outcomes: v.array(v.string()),
+		allowMultipleVotes: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		if (args.outcomes.length < 2 || args.outcomes.length > 10) {
@@ -245,6 +248,7 @@ export const createWithAuth = mutation({
 			description: args.description,
 			creatorId: args.userId,
 			status: "active",
+			allowMultipleVotes: args.allowMultipleVotes ?? false,
 			createdAt: Date.now(),
 		});
 
