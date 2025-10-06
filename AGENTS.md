@@ -4,7 +4,8 @@
 - **Build all**: `bun run build` or `turbo build`
 - **Type check**: `bun run check-types` (runs tsc --noEmit across workspace)
 - **Dev server**: `bun run dev:web` (web), `bun run dev:server` (backend), `bun run dev` (all)
-- **No tests configured**: Check for test setup before assuming testing framework
+- **No tests configured**: No test framework is set up in this project
+- **No lint configured**: No linter is set up (only type checking via tsc)
 
 ## Code Style
 - **Tabs for indentation** (as seen in all source files)

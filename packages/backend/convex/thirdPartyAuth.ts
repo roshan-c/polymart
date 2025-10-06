@@ -152,6 +152,10 @@ export const verifyLinkToken = mutation({
 			active: true,
 		});
 
+		if (linkToken.platform === "discord") {
+			await ctx.db.patch(user._id, { discordId: linkToken.platformUserId });
+		}
+
 		await ctx.db.patch(linkToken._id, { used: true });
 
 		return {

@@ -1,8 +1,22 @@
 # Polymart Discord Bot (Simple)
 
-A minimal Discord bot for Polymart prediction markets with just two commands:
-- `/link` - Link your Discord account to Polymart
-- `/create-poll` - Create a new prediction market poll
+A Discord bot for Polymart prediction markets with full API integration.
+
+## Commands
+
+### User Commands
+
+- **`/link`** - Link your Discord account to Polymart
+- **`/create-poll`** - Create a new prediction market poll
+- **`/bet`** - Place a bet on a poll outcome
+- **`/polls`** - List prediction market polls (filter by status)
+- **`/poll`** - View details of a specific poll
+- **`/my-bets`** - View your betting history
+- **`/profile`** - View user profile and stats
+
+### Admin Commands
+
+- **`/resolve-poll`** - Resolve a poll with a winning outcome (requires admin privileges)
 
 ## Setup
 
@@ -56,6 +70,45 @@ Once linked, use `/create-poll` with:
 Example:
 ```
 /create-poll title:"Will it rain tomorrow?" outcomes:"Yes,No" description:"Weather forecast poll"
+```
+
+### Browsing Polls
+
+Use `/polls` to list all polls, or filter by status:
+```
+/polls status:active
+```
+
+Use `/poll` to view detailed information about a specific poll:
+```
+/poll poll-id:abc123
+```
+
+### Placing Bets
+
+Use `/bet` to place a bet on a poll outcome:
+```
+/bet poll-id:abc123 outcome-id:out1 points:100
+```
+
+### Viewing Your Activity
+
+Use `/my-bets` to see all your bets:
+```
+/my-bets
+```
+
+Use `/profile` to view your stats or another user's stats:
+```
+/profile
+/profile user:@username
+```
+
+### Resolving Polls (Admin Only)
+
+Admins can resolve polls with `/resolve-poll`:
+```
+/resolve-poll poll-id:abc123 winning-outcome-id:out1 evidence-url:https://example.com/proof
 ```
 
 ## Architecture

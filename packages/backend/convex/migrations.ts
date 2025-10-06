@@ -83,3 +83,29 @@ export const backfillProbabilityHistory = mutation({
 		};
 	},
 });
+
+export const backfillDiscordIds = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const authorizations = await ctx.db.query("thirdPartyAuthorizations").collect();
+
+		let usersUpdated = 0;
+
+		for (const auth of authorizations) {
+			if (auth.platform === "discord" && auth.platformUserId) {
+				const user = await ctx.db.get(auth.userId);
+				if (user && !user.discordId) {
+					await ctx.db.patch(auth.userId, {
+						discordId: auth.platformUserId,
+					});
+					usersUpdated++;
+				}
+			}
+		}
+
+		return {
+			success: true,
+			usersUpdated,
+		};
+	},
+});
