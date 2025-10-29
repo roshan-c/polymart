@@ -63,20 +63,35 @@ export const resolvePoll = mutation({
 			0
 		);
 
+		const winningUserIds = [...new Set(winningBets.map((bet) => bet.userId))];
+		const users = await Promise.all(winningUserIds.map((id) => ctx.db.get(id)));
+		const userMap = new Map();
+		for (let i = 0; i < winningUserIds.length; i++) {
+			userMap.set(winningUserIds[i], users[i]);
+		}
+
+		const betPatches = [];
+		const userPatches = [];
+
 		for (const bet of winningBets) {
 			const proportion = bet.pointsWagered / totalWinningWager;
 			const payout = totalPool * proportion;
 
-			await ctx.db.patch(bet._id, {
-				settled: true,
-				payout,
-			});
+			betPatches.push(
+				ctx.db.patch(bet._id, {
+					settled: true,
+					payout,
+				})
+			);
 
-			const user = await ctx.db.get(bet.userId);
+			const user = userMap.get(bet.userId);
 			if (user) {
-				await ctx.db.patch(bet.userId, {
-					pointBalance: user.pointBalance + payout,
-				});
+				userPatches.push(
+					ctx.db.patch(bet.userId, {
+						pointBalance: user.pointBalance + payout,
+					})
+				);
+				user.pointBalance += payout;
 			}
 		}
 
@@ -84,11 +99,15 @@ export const resolvePoll = mutation({
 			(bet) => bet.outcomeId !== args.winningOutcomeId
 		);
 		for (const bet of losingBets) {
-			await ctx.db.patch(bet._id, {
-				settled: true,
-				payout: 0,
-			});
+			betPatches.push(
+				ctx.db.patch(bet._id, {
+					settled: true,
+					payout: 0,
+				})
+			);
 		}
+
+		await Promise.all([...betPatches, ...userPatches]);
 
 		return { success: true, totalPool, winningBets: winningBets.length };
 	},
@@ -132,19 +151,36 @@ export const cancelPoll = mutation({
 			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
 			.collect();
 
-		for (const bet of allBets) {
-			await ctx.db.patch(bet._id, {
-				settled: true,
-				payout: bet.pointsWagered,
-			});
+		const userIds = [...new Set(allBets.map((bet) => bet.userId))];
+		const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
+		const userMap = new Map();
+		for (let i = 0; i < userIds.length; i++) {
+			userMap.set(userIds[i], users[i]);
+		}
 
-			const user = await ctx.db.get(bet.userId);
+		const betPatches = [];
+		const userPatches = [];
+
+		for (const bet of allBets) {
+			betPatches.push(
+				ctx.db.patch(bet._id, {
+					settled: true,
+					payout: bet.pointsWagered,
+				})
+			);
+
+			const user = userMap.get(bet.userId);
 			if (user) {
-				await ctx.db.patch(bet.userId, {
-					pointBalance: user.pointBalance + bet.pointsWagered,
-				});
+				userPatches.push(
+					ctx.db.patch(bet.userId, {
+						pointBalance: user.pointBalance + bet.pointsWagered,
+					})
+				);
+				user.pointBalance += bet.pointsWagered;
 			}
 		}
+
+		await Promise.all([...betPatches, ...userPatches]);
 
 		return { success: true, refundedBets: allBets.length };
 	},

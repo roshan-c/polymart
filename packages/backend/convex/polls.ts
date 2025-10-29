@@ -71,54 +71,85 @@ export const getAll = query({
 					.collect()
 			: await ctx.db.query("polls").order("desc").collect();
 
-		const pollsWithDetails = await Promise.all(
-			polls.map(async (poll) => {
-				const outcomes = await ctx.db
-					.query("outcomes")
-					.withIndex("by_poll", (q) => q.eq("pollId", poll._id))
-					.order("asc")
-					.collect();
+		if (polls.length === 0) {
+			return [];
+		}
 
-				const creator = await ctx.db.get(poll.creatorId);
+		const pollIds = polls.map((p) => p._id);
+		const creatorIds = [...new Set(polls.map((p) => p.creatorId))];
 
-				const totalBets = await ctx.db
-					.query("bets")
-					.withIndex("by_poll", (q) => q.eq("pollId", poll._id))
-					.collect();
+		const [allOutcomes, allBets, creators] = await Promise.all([
+			ctx.db.query("outcomes").collect(),
+			ctx.db.query("bets").collect(),
+			Promise.all(creatorIds.map((id) => ctx.db.get(id))),
+		]);
 
-				const totalVolume = totalBets.reduce(
+		const outcomesByPoll = new Map<string, typeof allOutcomes>();
+		for (const outcome of allOutcomes) {
+			if (pollIds.includes(outcome.pollId)) {
+				if (!outcomesByPoll.has(outcome.pollId)) {
+					outcomesByPoll.set(outcome.pollId, []);
+				}
+				outcomesByPoll.get(outcome.pollId)!.push(outcome);
+			}
+		}
+
+		const betsByPoll = new Map<string, typeof allBets>();
+		const betsByOutcome = new Map<string, typeof allBets>();
+		for (const bet of allBets) {
+			if (pollIds.includes(bet.pollId)) {
+				if (!betsByPoll.has(bet.pollId)) {
+					betsByPoll.set(bet.pollId, []);
+				}
+				betsByPoll.get(bet.pollId)!.push(bet);
+
+				if (!betsByOutcome.has(bet.outcomeId)) {
+					betsByOutcome.set(bet.outcomeId, []);
+				}
+				betsByOutcome.get(bet.outcomeId)!.push(bet);
+			}
+		}
+
+		const creatorMap = new Map();
+		for (let i = 0; i < creatorIds.length; i++) {
+			creatorMap.set(creatorIds[i], creators[i]);
+		}
+
+		const pollsWithDetails = polls.map((poll) => {
+			const outcomes = (outcomesByPoll.get(poll._id) || []).sort((a, b) => a.order - b.order);
+			const creator = creatorMap.get(poll.creatorId);
+			const totalBets = betsByPoll.get(poll._id) || [];
+
+			const totalVolume = totalBets.reduce(
+				(sum, bet) => sum + bet.pointsWagered,
+				0
+			);
+
+			const outcomesWithProbabilities = outcomes.map((outcome) => {
+				const outcomeBets = betsByOutcome.get(outcome._id) || [];
+				const outcomeVolume = outcomeBets.reduce(
 					(sum, bet) => sum + bet.pointsWagered,
 					0
 				);
-
-				const outcomesWithProbabilities = outcomes.map((outcome) => {
-					const outcomeBets = totalBets.filter(
-						(bet) => bet.outcomeId === outcome._id
-					);
-					const outcomeVolume = outcomeBets.reduce(
-						(sum, bet) => sum + bet.pointsWagered,
-						0
-					);
-					const probability =
-						totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
-
-					return {
-						...outcome,
-						probability,
-						volume: outcomeVolume,
-						betCount: outcomeBets.length,
-					};
-				});
+				const probability =
+					totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
 
 				return {
-					...poll,
-					outcomes: outcomesWithProbabilities,
-					creator,
-					totalVolume,
-					totalBets: totalBets.length,
+					...outcome,
+					probability,
+					volume: outcomeVolume,
+					betCount: outcomeBets.length,
 				};
-			})
-		);
+			});
+
+			return {
+				...poll,
+				outcomes: outcomesWithProbabilities,
+				creator,
+				totalVolume,
+				totalBets: totalBets.length,
+			};
+		});
 
 		return pollsWithDetails;
 	},
@@ -132,28 +163,34 @@ export const get = query({
 		const poll = await ctx.db.get(args.pollId);
 		if (!poll) return null;
 
-		const outcomes = await ctx.db
-			.query("outcomes")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.order("asc")
-			.collect();
-
-		const creator = await ctx.db.get(poll.creatorId);
-
-		const allBets = await ctx.db
-			.query("bets")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
+		const [outcomes, creator, allBets] = await Promise.all([
+			ctx.db
+				.query("outcomes")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.order("asc")
+				.collect(),
+			ctx.db.get(poll.creatorId),
+			ctx.db
+				.query("bets")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+		]);
 
 		const totalVolume = allBets.reduce(
 			(sum, bet) => sum + bet.pointsWagered,
 			0
 		);
 
+		const betsByOutcome = new Map<string, typeof allBets>();
+		for (const bet of allBets) {
+			if (!betsByOutcome.has(bet.outcomeId)) {
+				betsByOutcome.set(bet.outcomeId, []);
+			}
+			betsByOutcome.get(bet.outcomeId)!.push(bet);
+		}
+
 		const outcomesWithProbabilities = outcomes.map((outcome) => {
-			const outcomeBets = allBets.filter(
-				(bet) => bet.outcomeId === outcome._id
-			);
+			const outcomeBets = betsByOutcome.get(outcome._id) || [];
 			const outcomeVolume = outcomeBets.reduce(
 				(sum, bet) => sum + bet.pointsWagered,
 				0
@@ -199,26 +236,29 @@ export const getProbabilityHistory = query({
 		pollId: v.id("polls"),
 	},
 	handler: async (ctx, args) => {
-		const history = await ctx.db
-			.query("probabilityHistory")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
-
-		const outcomes = await ctx.db
-			.query("outcomes")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
+		const [history, outcomes] = await Promise.all([
+			ctx.db
+				.query("probabilityHistory")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+			ctx.db
+				.query("outcomes")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+		]);
 
 		const groupedByTimestamp: Record<number, Record<string, number>> = {};
 		const outcomeKeyMap = new Map<string, string>();
+		const usedDisplayKeys = new Set<string>();
 
 		for (const outcome of outcomes) {
 			let displayKey = outcome.title;
 			let counter = 1;
-			while (Array.from(outcomeKeyMap.values()).includes(displayKey)) {
+			while (usedDisplayKeys.has(displayKey)) {
 				displayKey = `${outcome.title} #${counter}`;
 				counter++;
 			}
+			usedDisplayKeys.add(displayKey);
 			outcomeKeyMap.set(outcome._id, displayKey);
 		}
 
