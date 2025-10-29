@@ -1,5 +1,5 @@
 import { v, ConvexError, GenericId } from "convex/values";
-import { mutation, query, type MutationCtx } from "./_generated/server";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 
 const LIQUIDITY_CONSTANT = 100;
 
@@ -10,6 +10,18 @@ function calculateSharesReceived(
 	const k = LIQUIDITY_CONSTANT * currentShares;
 	const newShares = currentShares - k / (k / currentShares + pointsWagered);
 	return Math.max(0, newShares);
+}
+
+async function buildEntityMap(
+	ctx: QueryCtx | MutationCtx,
+	ids: any[]
+): Promise<Map<any, any>> {
+	const entities = await Promise.all(ids.map((id) => ctx.db.get(id)));
+	const entityMap = new Map();
+	for (let i = 0; i < ids.length; i++) {
+		entityMap.set(ids[i], entities[i]);
+	}
+	return entityMap;
 }
 
 async function executeBetPlacement(
@@ -192,20 +204,10 @@ export const getUserBets = query({
 		const pollIds = [...new Set(filteredBets.map((bet) => bet.pollId))];
 		const outcomeIds = [...new Set(filteredBets.map((bet) => bet.outcomeId))];
 
-		const [polls, outcomes] = await Promise.all([
-			Promise.all(pollIds.map((id) => ctx.db.get(id))),
-			Promise.all(outcomeIds.map((id) => ctx.db.get(id))),
+		const [pollMap, outcomeMap] = await Promise.all([
+			buildEntityMap(ctx, pollIds),
+			buildEntityMap(ctx, outcomeIds),
 		]);
-
-		const pollMap = new Map();
-		for (let i = 0; i < pollIds.length; i++) {
-			pollMap.set(pollIds[i], polls[i]);
-		}
-
-		const outcomeMap = new Map();
-		for (let i = 0; i < outcomeIds.length; i++) {
-			outcomeMap.set(outcomeIds[i], outcomes[i]);
-		}
 
 		const betsWithDetails = filteredBets.map((bet) => ({
 			...bet,
@@ -234,20 +236,10 @@ export const getPollBets = query({
 		const userIds = [...new Set(bets.map((bet) => bet.userId))];
 		const outcomeIds = [...new Set(bets.map((bet) => bet.outcomeId))];
 
-		const [users, outcomes] = await Promise.all([
-			Promise.all(userIds.map((id) => ctx.db.get(id))),
-			Promise.all(outcomeIds.map((id) => ctx.db.get(id))),
+		const [userMap, outcomeMap] = await Promise.all([
+			buildEntityMap(ctx, userIds),
+			buildEntityMap(ctx, outcomeIds),
 		]);
-
-		const userMap = new Map();
-		for (let i = 0; i < userIds.length; i++) {
-			userMap.set(userIds[i], users[i]);
-		}
-
-		const outcomeMap = new Map();
-		for (let i = 0; i < outcomeIds.length; i++) {
-			outcomeMap.set(outcomeIds[i], outcomes[i]);
-		}
 
 		const betsWithDetails = bets.map((bet) => ({
 			...bet,
@@ -274,12 +266,7 @@ export const getOutcomeBets = query({
 		}
 
 		const userIds = [...new Set(bets.map((bet) => bet.userId))];
-		const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
-
-		const userMap = new Map();
-		for (let i = 0; i < userIds.length; i++) {
-			userMap.set(userIds[i], users[i]);
-		}
+		const userMap = await buildEntityMap(ctx, userIds);
 
 		const betsWithUsers = bets.map((bet) => ({
 			...bet,

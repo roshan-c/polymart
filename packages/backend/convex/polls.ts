@@ -1,5 +1,17 @@
 import { v, GenericId } from "convex/values";
-import { mutation, query, type MutationCtx } from "./_generated/server";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+
+async function buildEntityMap(
+	ctx: QueryCtx | MutationCtx,
+	ids: any[]
+): Promise<Map<any, any>> {
+	const entities = await Promise.all(ids.map((id) => ctx.db.get(id)));
+	const entityMap = new Map();
+	for (let i = 0; i < ids.length; i++) {
+		entityMap.set(ids[i], entities[i]);
+	}
+	return entityMap;
+}
 
 function validatePollOutcomes(outcomes: string[]) {
 	if (outcomes.length < 2 || outcomes.length > 10) {
@@ -133,10 +145,10 @@ export const getAll = query({
 		const pollIds = polls.map((p) => p._id);
 		const creatorIds = [...new Set(polls.map((p) => p.creatorId))];
 
-		const [allOutcomes, allBets, creators] = await Promise.all([
+		const [allOutcomes, allBets, creatorMap] = await Promise.all([
 			ctx.db.query("outcomes").collect(),
 			ctx.db.query("bets").collect(),
-			Promise.all(creatorIds.map((id) => ctx.db.get(id))),
+			buildEntityMap(ctx, creatorIds),
 		]);
 
 		const outcomesByPoll = new Map<string, typeof allOutcomes>();
@@ -163,11 +175,6 @@ export const getAll = query({
 				}
 				betsByOutcome.get(bet.outcomeId)!.push(bet);
 			}
-		}
-
-		const creatorMap = new Map();
-		for (let i = 0; i < creatorIds.length; i++) {
-			creatorMap.set(creatorIds[i], creators[i]);
 		}
 
 		const pollsWithDetails = polls.map((poll) => {
