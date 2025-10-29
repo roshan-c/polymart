@@ -10,11 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6"];
 
 function PollCard({ poll }: { poll: any }) {
-	const probabilityHistory = useQuery(api.polls.getProbabilityHistory, { pollId: poll._id });
-
-	const chartData = probabilityHistory?.history || [];
-	const outcomes = probabilityHistory?.outcomes || [];
-
 	return (
 		<Link href={`/polls/${poll._id}`}>
 			<Card className="h-full transition-shadow hover:shadow-lg">
@@ -23,24 +18,22 @@ function PollCard({ poll }: { poll: any }) {
 					<CardDescription>by {poll.creator?.name || "Unknown"}</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{chartData.length > 0 && (
+					{poll.outcomes && poll.outcomes.length > 0 && (
 						<div className="mb-4 space-y-3">
-							{outcomes.map((outcome: string, index: number) => {
-								const latestData = chartData[chartData.length - 1] as Record<string, number> | undefined;
-								const probability = latestData?.[outcome] || 0;
+							{poll.outcomes.map((outcome: any, index: number) => {
 								return (
-									<div key={`${outcome}-${index}`} className="space-y-1">
+									<div key={`${outcome._id}-${index}`} className="space-y-1">
 										<div className="flex items-center justify-between text-sm">
-											<span className="font-medium truncate">{outcome}</span>
+											<span className="font-medium truncate">{outcome.title}</span>
 											<span className="font-bold" style={{ color: COLORS[index % COLORS.length] }}>
-												{probability.toFixed(0)}%
+												{outcome.probability.toFixed(0)}%
 											</span>
 										</div>
 										<div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
 											<div
 												className="h-full rounded-full transition-all"
 												style={{
-													width: `${probability}%`,
+													width: `${outcome.probability}%`,
 													backgroundColor: COLORS[index % COLORS.length]
 												}}
 											/>
