@@ -101,36 +101,48 @@ export const placeBet = mutation({
 			settled: false,
 		});
 
-		const allBets = await ctx.db
-			.query("bets")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
+		const [allBets, allOutcomes] = await Promise.all([
+			ctx.db
+				.query("bets")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+			ctx.db
+				.query("outcomes")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+		]);
 
 		const totalVolume = allBets.reduce(
 			(sum, bet) => sum + bet.pointsWagered,
 			0
 		);
 
-		const allOutcomes = await ctx.db
-			.query("outcomes")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
+		const betsByOutcome = new Map<string, typeof allBets>();
+		for (const bet of allBets) {
+			if (!betsByOutcome.has(bet.outcomeId)) {
+				betsByOutcome.set(bet.outcomeId, []);
+			}
+			betsByOutcome.get(bet.outcomeId)!.push(bet);
+		}
 
-		for (const out of allOutcomes) {
-			const outcomeBets = allBets.filter((bet) => bet.outcomeId === out._id);
+		const timestamp = Date.now();
+		const historyInserts = allOutcomes.map((out) => {
+			const outcomeBets = betsByOutcome.get(out._id) || [];
 			const outcomeVolume = outcomeBets.reduce(
 				(sum, bet) => sum + bet.pointsWagered,
 				0
 			);
 			const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
 
-			await ctx.db.insert("probabilityHistory", {
+			return ctx.db.insert("probabilityHistory", {
 				pollId: args.pollId,
 				outcomeId: out._id,
 				probability,
-				timestamp: Date.now(),
+				timestamp,
 			});
-		}
+		});
+
+		await Promise.all(historyInserts);
 
 		return await ctx.db.get(betId);
 	},
@@ -152,18 +164,33 @@ export const getUserBets = query({
 			? bets.filter((bet) => bet.pollId === args.pollId)
 			: bets;
 
-		const betsWithDetails = await Promise.all(
-			filteredBets.map(async (bet) => {
-				const poll = await ctx.db.get(bet.pollId);
-				const outcome = await ctx.db.get(bet.outcomeId);
+		if (filteredBets.length === 0) {
+			return [];
+		}
 
-				return {
-					...bet,
-					poll,
-					outcome,
-				};
-			})
-		);
+		const pollIds = [...new Set(filteredBets.map((bet) => bet.pollId))];
+		const outcomeIds = [...new Set(filteredBets.map((bet) => bet.outcomeId))];
+
+		const [polls, outcomes] = await Promise.all([
+			Promise.all(pollIds.map((id) => ctx.db.get(id))),
+			Promise.all(outcomeIds.map((id) => ctx.db.get(id))),
+		]);
+
+		const pollMap = new Map();
+		for (let i = 0; i < pollIds.length; i++) {
+			pollMap.set(pollIds[i], polls[i]);
+		}
+
+		const outcomeMap = new Map();
+		for (let i = 0; i < outcomeIds.length; i++) {
+			outcomeMap.set(outcomeIds[i], outcomes[i]);
+		}
+
+		const betsWithDetails = filteredBets.map((bet) => ({
+			...bet,
+			poll: pollMap.get(bet.pollId),
+			outcome: outcomeMap.get(bet.outcomeId),
+		}));
 
 		return betsWithDetails;
 	},
@@ -179,18 +206,33 @@ export const getPollBets = query({
 			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
 			.collect();
 
-		const betsWithDetails = await Promise.all(
-			bets.map(async (bet) => {
-				const user = await ctx.db.get(bet.userId);
-				const outcome = await ctx.db.get(bet.outcomeId);
+		if (bets.length === 0) {
+			return [];
+		}
 
-				return {
-					...bet,
-					user,
-					outcome,
-				};
-			})
-		);
+		const userIds = [...new Set(bets.map((bet) => bet.userId))];
+		const outcomeIds = [...new Set(bets.map((bet) => bet.outcomeId))];
+
+		const [users, outcomes] = await Promise.all([
+			Promise.all(userIds.map((id) => ctx.db.get(id))),
+			Promise.all(outcomeIds.map((id) => ctx.db.get(id))),
+		]);
+
+		const userMap = new Map();
+		for (let i = 0; i < userIds.length; i++) {
+			userMap.set(userIds[i], users[i]);
+		}
+
+		const outcomeMap = new Map();
+		for (let i = 0; i < outcomeIds.length; i++) {
+			outcomeMap.set(outcomeIds[i], outcomes[i]);
+		}
+
+		const betsWithDetails = bets.map((bet) => ({
+			...bet,
+			user: userMap.get(bet.userId),
+			outcome: outcomeMap.get(bet.outcomeId),
+		}));
 
 		return betsWithDetails;
 	},
@@ -206,15 +248,22 @@ export const getOutcomeBets = query({
 			.withIndex("by_outcome", (q) => q.eq("outcomeId", args.outcomeId))
 			.collect();
 
-		const betsWithUsers = await Promise.all(
-			bets.map(async (bet) => {
-				const user = await ctx.db.get(bet.userId);
-				return {
-					...bet,
-					user,
-				};
-			})
-		);
+		if (bets.length === 0) {
+			return [];
+		}
+
+		const userIds = [...new Set(bets.map((bet) => bet.userId))];
+		const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
+
+		const userMap = new Map();
+		for (let i = 0; i < userIds.length; i++) {
+			userMap.set(userIds[i], users[i]);
+		}
+
+		const betsWithUsers = bets.map((bet) => ({
+			...bet,
+			user: userMap.get(bet.userId),
+		}));
 
 		return betsWithUsers;
 	},
@@ -301,36 +350,48 @@ export const placeBetWithAuth = mutation({
 			settled: false,
 		});
 
-		const allBets = await ctx.db
-			.query("bets")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
+		const [allBets, allOutcomes] = await Promise.all([
+			ctx.db
+				.query("bets")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+			ctx.db
+				.query("outcomes")
+				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+				.collect(),
+		]);
 
 		const totalVolume = allBets.reduce(
 			(sum, bet) => sum + bet.pointsWagered,
 			0
 		);
 
-		const allOutcomes = await ctx.db
-			.query("outcomes")
-			.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-			.collect();
+		const betsByOutcome = new Map<string, typeof allBets>();
+		for (const bet of allBets) {
+			if (!betsByOutcome.has(bet.outcomeId)) {
+				betsByOutcome.set(bet.outcomeId, []);
+			}
+			betsByOutcome.get(bet.outcomeId)!.push(bet);
+		}
 
-		for (const out of allOutcomes) {
-			const outcomeBets = allBets.filter((bet) => bet.outcomeId === out._id);
+		const timestamp = Date.now();
+		const historyInserts = allOutcomes.map((out) => {
+			const outcomeBets = betsByOutcome.get(out._id) || [];
 			const outcomeVolume = outcomeBets.reduce(
 				(sum, bet) => sum + bet.pointsWagered,
 				0
 			);
 			const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
 
-			await ctx.db.insert("probabilityHistory", {
+			return ctx.db.insert("probabilityHistory", {
 				pollId: args.pollId,
 				outcomeId: out._id,
 				probability,
-				timestamp: Date.now(),
+				timestamp,
 			});
-		}
+		});
+
+		await Promise.all(historyInserts);
 
 		return await ctx.db.get(betId);
 	},
