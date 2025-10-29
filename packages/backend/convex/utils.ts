@@ -6,8 +6,6 @@ export async function buildEntityMap(
 ): Promise<Map<any, any>> {
 	const entities = await Promise.all(ids.map((id) => ctx.db.get(id)));
 	const entityMap = new Map();
-	for (let i = 0; i < ids.length; i++) {
-		entityMap.set(ids[i], entities[i]);
-	}
+	ids.forEach((id, i) => entityMap.set(id, entities[i]));
 	return entityMap;
 }
