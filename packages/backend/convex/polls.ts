@@ -1,17 +1,6 @@
 import { v, GenericId } from "convex/values";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-
-async function buildEntityMap(
-	ctx: QueryCtx | MutationCtx,
-	ids: any[]
-): Promise<Map<any, any>> {
-	const entities = await Promise.all(ids.map((id) => ctx.db.get(id)));
-	const entityMap = new Map();
-	for (let i = 0; i < ids.length; i++) {
-		entityMap.set(ids[i], entities[i]);
-	}
-	return entityMap;
-}
+import { buildEntityMap } from "./utils.js";
 
 function validatePollOutcomes(outcomes: string[]) {
 	if (outcomes.length < 2 || outcomes.length > 10) {

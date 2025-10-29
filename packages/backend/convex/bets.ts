@@ -1,5 +1,6 @@
 import { v, ConvexError, GenericId } from "convex/values";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { buildEntityMap } from "./utils.js";
 
 const LIQUIDITY_CONSTANT = 100;
 
@@ -10,18 +11,6 @@ function calculateSharesReceived(
 	const k = LIQUIDITY_CONSTANT * currentShares;
 	const newShares = currentShares - k / (k / currentShares + pointsWagered);
 	return Math.max(0, newShares);
-}
-
-async function buildEntityMap(
-	ctx: QueryCtx | MutationCtx,
-	ids: any[]
-): Promise<Map<any, any>> {
-	const entities = await Promise.all(ids.map((id) => ctx.db.get(id)));
-	const entityMap = new Map();
-	for (let i = 0; i < ids.length; i++) {
-		entityMap.set(ids[i], entities[i]);
-	}
-	return entityMap;
 }
 
 async function executeBetPlacement(
