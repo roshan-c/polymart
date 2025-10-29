@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { PolymartAPI } from "../api.js";
 import { config } from "../config.js";
+import { getStatusEmoji, replyWithTruncation } from "../utils.js";
 
 const api = new PolymartAPI(config.polymartApiBase);
 
@@ -30,7 +31,7 @@ export const pollCommand = {
 			}
 
 			const poll = result.poll;
-			const statusEmoji = poll.status === "active" ? "🟢" : poll.status === "resolved" ? "✅" : "❌";
+			const statusEmoji = getStatusEmoji(poll.status);
 			
 			const outcomes = poll.outcomes.map((outcome: any) => {
 				return `• **${outcome.title}** - ${outcome.probability.toFixed(1)}% (${outcome.betCount} bets, ${outcome.volume} pts)`;
@@ -45,13 +46,7 @@ export const pollCommand = {
 				`**Outcomes:**\n${outcomes}\n\n` +
 				`View on web: https://polymart.xyz/polls/${poll._id}`;
 
-			if (message.length > 2000) {
-				await interaction.editReply({
-					content: message.substring(0, 1997) + "...",
-				});
-			} else {
-				await interaction.editReply({ content: message });
-			}
+			await replyWithTruncation(interaction, message);
 		} catch (error: any) {
 			console.error("Poll error:", error);
 			await interaction.editReply({
