@@ -1,5 +1,81 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { v, GenericId } from "convex/values";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { buildEntityMap } from "./utils.js";
+
+function validatePollOutcomes(outcomes: string[]) {
+	if (outcomes.length < 2 || outcomes.length > 10) {
+		throw new Error("Polls must have between 2 and 10 outcomes");
+	}
+
+	const uniqueOutcomes = new Set(outcomes);
+	if (uniqueOutcomes.size !== outcomes.length) {
+		throw new Error("Outcome names must be unique");
+	}
+}
+
+async function createPollWithOutcomes(
+	ctx: MutationCtx,
+	creatorId: GenericId<"users">,
+	title: string,
+	outcomes: string[],
+	description?: string,
+	allowMultipleVotes?: boolean
+) {
+	validatePollOutcomes(outcomes);
+
+	const pollId = await ctx.db.insert("polls", {
+		title,
+		description,
+		creatorId,
+		status: "active",
+		allowMultipleVotes: allowMultipleVotes ?? false,
+		createdAt: Date.now(),
+	});
+
+	for (let i = 0; i < outcomes.length; i++) {
+		await ctx.db.insert("outcomes", {
+			pollId,
+			title: outcomes[i],
+			totalShares: 100,
+			order: i,
+		});
+	}
+
+	return pollId;
+}
+
+function calculateOutcomeProbability(
+	outcomeBets: any[],
+	totalVolume: number
+): number {
+	const outcomeVolume = outcomeBets.reduce(
+		(sum, bet) => sum + bet.pointsWagered,
+		0
+	);
+	return totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
+}
+
+function enrichOutcomesWithProbabilities(
+	outcomes: any[],
+	betsByOutcome: Map<string, any[]>,
+	totalVolume: number
+) {
+	return outcomes.map((outcome) => {
+		const outcomeBets = betsByOutcome.get(outcome._id) || [];
+		const outcomeVolume = outcomeBets.reduce(
+			(sum, bet) => sum + bet.pointsWagered,
+			0
+		);
+		const probability = calculateOutcomeProbability(outcomeBets, totalVolume);
+
+		return {
+			...outcome,
+			probability,
+			volume: outcomeVolume,
+			betCount: outcomeBets.length,
+		};
+	});
+}
 
 export const create = mutation({
 	args: {
@@ -23,34 +99,14 @@ export const create = mutation({
 			throw new Error("User not found");
 		}
 
-		if (args.outcomes.length < 2 || args.outcomes.length > 10) {
-			throw new Error("Polls must have between 2 and 10 outcomes");
-		}
-
-		const uniqueOutcomes = new Set(args.outcomes);
-		if (uniqueOutcomes.size !== args.outcomes.length) {
-			throw new Error("Outcome names must be unique");
-		}
-
-		const pollId = await ctx.db.insert("polls", {
-			title: args.title,
-			description: args.description,
-			creatorId: user._id,
-			status: "active",
-			allowMultipleVotes: args.allowMultipleVotes ?? false,
-			createdAt: Date.now(),
-		});
-
-		for (let i = 0; i < args.outcomes.length; i++) {
-			await ctx.db.insert("outcomes", {
-				pollId,
-				title: args.outcomes[i],
-				totalShares: 100,
-				order: i,
-			});
-		}
-
-		return pollId;
+		return await createPollWithOutcomes(
+			ctx,
+			user._id,
+			args.title,
+			args.outcomes,
+			args.description,
+			args.allowMultipleVotes
+		);
 	},
 });
 
@@ -78,10 +134,10 @@ export const getAll = query({
 		const pollIds = polls.map((p) => p._id);
 		const creatorIds = [...new Set(polls.map((p) => p.creatorId))];
 
-		const [allOutcomes, allBets, creators] = await Promise.all([
+		const [allOutcomes, allBets, creatorMap] = await Promise.all([
 			ctx.db.query("outcomes").collect(),
 			ctx.db.query("bets").collect(),
-			Promise.all(creatorIds.map((id) => ctx.db.get(id))),
+			buildEntityMap(ctx, creatorIds),
 		]);
 
 		const outcomesByPoll = new Map<string, typeof allOutcomes>();
@@ -110,11 +166,6 @@ export const getAll = query({
 			}
 		}
 
-		const creatorMap = new Map();
-		for (let i = 0; i < creatorIds.length; i++) {
-			creatorMap.set(creatorIds[i], creators[i]);
-		}
-
 		const pollsWithDetails = polls.map((poll) => {
 			const outcomes = (outcomesByPoll.get(poll._id) || []).sort((a, b) => a.order - b.order);
 			const creator = creatorMap.get(poll.creatorId);
@@ -125,22 +176,11 @@ export const getAll = query({
 				0
 			);
 
-			const outcomesWithProbabilities = outcomes.map((outcome) => {
-				const outcomeBets = betsByOutcome.get(outcome._id) || [];
-				const outcomeVolume = outcomeBets.reduce(
-					(sum, bet) => sum + bet.pointsWagered,
-					0
-				);
-				const probability =
-					totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
-
-				return {
-					...outcome,
-					probability,
-					volume: outcomeVolume,
-					betCount: outcomeBets.length,
-				};
-			});
+			const outcomesWithProbabilities = enrichOutcomesWithProbabilities(
+				outcomes,
+				betsByOutcome,
+				totalVolume
+			);
 
 			return {
 				...poll,
@@ -189,22 +229,11 @@ export const get = query({
 			betsByOutcome.get(bet.outcomeId)!.push(bet);
 		}
 
-		const outcomesWithProbabilities = outcomes.map((outcome) => {
-			const outcomeBets = betsByOutcome.get(outcome._id) || [];
-			const outcomeVolume = outcomeBets.reduce(
-				(sum, bet) => sum + bet.pointsWagered,
-				0
-			);
-			const probability =
-				totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
-
-			return {
-				...outcome,
-				probability,
-				volume: outcomeVolume,
-				betCount: outcomeBets.length,
-			};
-		});
+		const outcomesWithProbabilities = enrichOutcomesWithProbabilities(
+			outcomes,
+			betsByOutcome,
+			totalVolume
+		);
 
 		return {
 			...poll,
@@ -295,33 +324,13 @@ export const createWithAuth = mutation({
 		allowMultipleVotes: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		if (args.outcomes.length < 2 || args.outcomes.length > 10) {
-			throw new Error("Polls must have between 2 and 10 outcomes");
-		}
-
-		const uniqueOutcomes = new Set(args.outcomes);
-		if (uniqueOutcomes.size !== args.outcomes.length) {
-			throw new Error("Outcome names must be unique");
-		}
-
-		const pollId = await ctx.db.insert("polls", {
-			title: args.title,
-			description: args.description,
-			creatorId: args.userId,
-			status: "active",
-			allowMultipleVotes: args.allowMultipleVotes ?? false,
-			createdAt: Date.now(),
-		});
-
-		for (let i = 0; i < args.outcomes.length; i++) {
-			await ctx.db.insert("outcomes", {
-				pollId,
-				title: args.outcomes[i],
-				totalShares: 100,
-				order: i,
-			});
-		}
-
-		return pollId;
+		return await createPollWithOutcomes(
+			ctx,
+			args.userId,
+			args.title,
+			args.outcomes,
+			args.description,
+			args.allowMultipleVotes
+		);
 	},
 });

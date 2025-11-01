@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { PolymartAPI } from "../api.js";
 import { config } from "../config.js";
+import { getStatusEmoji, replyWithTruncation } from "../utils.js";
 
 const api = new PolymartAPI(config.polymartApiBase);
 
@@ -33,20 +34,14 @@ export const myBetsCommand = {
 
 			const betsList = result.bets.slice(0, 10).map((bet: any) => {
 				const date = new Date(bet.createdAt).toLocaleDateString();
-				const statusEmoji = bet.poll.status === "active" ? "🟢" : bet.poll.status === "resolved" ? "✅" : "❌";
+				const statusEmoji = getStatusEmoji(bet.poll.status);
 				return `${statusEmoji} **${bet.poll.title}**\n` +
 					`Outcome: ${bet.outcome.title} | Wagered: ${bet.pointsWagered} pts | ${date}`;
 			}).join("\n\n");
 
 			const message = `**Your Bets**\n\n${betsList}`;
 
-			if (message.length > 2000) {
-				await interaction.editReply({
-					content: message.substring(0, 1997) + "...",
-				});
-			} else {
-				await interaction.editReply({ content: message });
-			}
+			await replyWithTruncation(interaction, message);
 		} catch (error: any) {
 			console.error("My bets error:", error);
 			await interaction.editReply({

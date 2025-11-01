@@ -1,5 +1,6 @@
-import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { v, GenericId } from "convex/values";
+import { mutation, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { buildEntityMap } from "./utils.js";
 
 export const resolvePoll = mutation({
 	args: {
@@ -64,11 +65,7 @@ export const resolvePoll = mutation({
 		);
 
 		const winningUserIds = [...new Set(winningBets.map((bet) => bet.userId))];
-		const users = await Promise.all(winningUserIds.map((id) => ctx.db.get(id)));
-		const userMap = new Map();
-		for (let i = 0; i < winningUserIds.length; i++) {
-			userMap.set(winningUserIds[i], users[i]);
-		}
+		const userMap = await buildEntityMap(ctx, winningUserIds);
 
 		const betPatches = [];
 		const userPatches = [];
@@ -152,11 +149,7 @@ export const cancelPoll = mutation({
 			.collect();
 
 		const userIds = [...new Set(allBets.map((bet) => bet.userId))];
-		const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
-		const userMap = new Map();
-		for (let i = 0; i < userIds.length; i++) {
-			userMap.set(userIds[i], users[i]);
-		}
+		const userMap = await buildEntityMap(ctx, userIds);
 
 		const betPatches = [];
 		const userPatches = [];

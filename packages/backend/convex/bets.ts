@@ -1,5 +1,6 @@
-import { v, ConvexError } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { v, ConvexError, GenericId } from "convex/values";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { buildEntityMap } from "./utils.js";
 
 const LIQUIDITY_CONSTANT = 100;
 
@@ -10,6 +11,132 @@ function calculateSharesReceived(
 	const k = LIQUIDITY_CONSTANT * currentShares;
 	const newShares = currentShares - k / (k / currentShares + pointsWagered);
 	return Math.max(0, newShares);
+}
+
+async function executeBetPlacement(
+	ctx: MutationCtx,
+	userId: GenericId<"users">,
+	pollId: GenericId<"polls">,
+	outcomeId: GenericId<"outcomes">,
+	pointsWagered: number
+) {
+	const user = await ctx.db.get(userId);
+	if (!user) {
+		throw new Error("User not found");
+	}
+
+	if (pointsWagered <= 0) {
+		throw new Error("Bet amount must be positive");
+	}
+
+	if (!Number.isInteger(pointsWagered)) {
+		throw new ConvexError("Bet amount must be a whole number");
+	}
+
+	if (user.pointBalance < pointsWagered) {
+		throw new Error("Insufficient points");
+	}
+
+	const poll = await ctx.db.get(pollId);
+	if (!poll) {
+		throw new Error("Poll not found");
+	}
+
+	if (poll.status !== "active") {
+		throw new Error("Poll is not active");
+	}
+
+	const outcome = await ctx.db.get(outcomeId);
+	if (!outcome) {
+		throw new Error("Outcome not found");
+	}
+
+	if (outcome.pollId !== pollId) {
+		throw new Error("Outcome does not belong to this poll");
+	}
+
+	if (poll.allowMultipleVotes !== true) {
+		const existingBets = await ctx.db
+			.query("bets")
+			.withIndex("by_user_poll", (q) => q.eq("userId", userId).eq("pollId", pollId))
+			.collect();
+
+		const hasVotedOnDifferentOutcome = existingBets.some(
+			(bet) => bet.outcomeId !== outcomeId
+		);
+
+		if (hasVotedOnDifferentOutcome) {
+			throw new ConvexError("You can only vote on one outcome for this poll");
+		}
+	}
+
+	const sharesReceived = calculateSharesReceived(
+		pointsWagered,
+		outcome.totalShares
+	);
+
+	await ctx.db.patch(userId, {
+		pointBalance: user.pointBalance - pointsWagered,
+	});
+
+	await ctx.db.patch(outcomeId, {
+		totalShares: outcome.totalShares + sharesReceived,
+	});
+
+	const betId = await ctx.db.insert("bets", {
+		userId,
+		pollId,
+		outcomeId,
+		pointsWagered,
+		sharesReceived,
+		createdAt: Date.now(),
+		settled: false,
+	});
+
+	const [allBets, allOutcomes] = await Promise.all([
+		ctx.db
+			.query("bets")
+			.withIndex("by_poll", (q) => q.eq("pollId", pollId))
+			.collect(),
+		ctx.db
+			.query("outcomes")
+			.withIndex("by_poll", (q) => q.eq("pollId", pollId))
+			.collect(),
+	]);
+
+	const totalVolume = allBets.reduce(
+		(sum, bet) => sum + bet.pointsWagered,
+		0
+	);
+
+	const betsByOutcome = new Map<string, typeof allBets>();
+	for (const bet of allBets) {
+		if (!betsByOutcome.has(bet.outcomeId)) {
+			betsByOutcome.set(bet.outcomeId, []);
+		}
+		betsByOutcome.get(bet.outcomeId)!.push(bet);
+	}
+
+	const timestamp = Date.now();
+	const historyInserts = allOutcomes.map((out) => {
+		const outcomeBets = betsByOutcome.get(out._id) || [];
+		const outcomeVolume = outcomeBets.reduce(
+			(sum, bet) => sum + bet.pointsWagered,
+			0
+		);
+		const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
+
+		return ctx.db.insert("probabilityHistory", {
+			pollId,
+			outcomeId: out._id,
+			probability,
+			timestamp,
+		});
+	});
+
+	await Promise.all(historyInserts);
+
+	return await ctx.db.get(betId);
 }
 
 export const placeBet = mutation({
@@ -24,127 +151,22 @@ export const placeBet = mutation({
 			throw new Error("Not authenticated");
 		}
 
-	const user = await ctx.db
-		.query("users")
-		.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
-		.first();
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.first();
 
-	if (!user) {
-		throw new Error("User not found");
-	}
-
-	if (args.pointsWagered <= 0) {
-		throw new Error("Bet amount must be positive");
-	}
-
-	if (!Number.isInteger(args.pointsWagered)) {
-		throw new ConvexError("Bet amount must be a whole number");
-	}
-
-	if (user.pointBalance < args.pointsWagered) {
-		throw new Error("Insufficient points");
-	}
-
-	const poll = await ctx.db.get(args.pollId);
-		if (!poll) {
-			throw new Error("Poll not found");
+		if (!user) {
+			throw new Error("User not found");
 		}
 
-		if (poll.status !== "active") {
-			throw new Error("Poll is not active");
-		}
-
-		const outcome = await ctx.db.get(args.outcomeId);
-		if (!outcome) {
-			throw new Error("Outcome not found");
-		}
-
-		if (outcome.pollId !== args.pollId) {
-			throw new Error("Outcome does not belong to this poll");
-		}
-
-	if (poll.allowMultipleVotes !== true) {
-		const existingBets = await ctx.db
-			.query("bets")
-			.withIndex("by_user_poll", (q) => q.eq("userId", user._id).eq("pollId", args.pollId))
-			.collect();
-
-		const hasVotedOnDifferentOutcome = existingBets.some(
-			(bet) => bet.outcomeId !== args.outcomeId
+		return await executeBetPlacement(
+			ctx,
+			user._id,
+			args.pollId,
+			args.outcomeId,
+			args.pointsWagered
 		);
-
-		if (hasVotedOnDifferentOutcome) {
-			throw new ConvexError("You can only vote on one outcome for this poll");
-		}
-	}
-
-		const sharesReceived = calculateSharesReceived(
-			args.pointsWagered,
-			outcome.totalShares
-		);
-
-		await ctx.db.patch(user._id, {
-			pointBalance: user.pointBalance - args.pointsWagered,
-		});
-
-		await ctx.db.patch(args.outcomeId, {
-			totalShares: outcome.totalShares + sharesReceived,
-		});
-
-		const betId = await ctx.db.insert("bets", {
-			userId: user._id,
-			pollId: args.pollId,
-			outcomeId: args.outcomeId,
-			pointsWagered: args.pointsWagered,
-			sharesReceived,
-			createdAt: Date.now(),
-			settled: false,
-		});
-
-		const [allBets, allOutcomes] = await Promise.all([
-			ctx.db
-				.query("bets")
-				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-				.collect(),
-			ctx.db
-				.query("outcomes")
-				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-				.collect(),
-		]);
-
-		const totalVolume = allBets.reduce(
-			(sum, bet) => sum + bet.pointsWagered,
-			0
-		);
-
-		const betsByOutcome = new Map<string, typeof allBets>();
-		for (const bet of allBets) {
-			if (!betsByOutcome.has(bet.outcomeId)) {
-				betsByOutcome.set(bet.outcomeId, []);
-			}
-			betsByOutcome.get(bet.outcomeId)!.push(bet);
-		}
-
-		const timestamp = Date.now();
-		const historyInserts = allOutcomes.map((out) => {
-			const outcomeBets = betsByOutcome.get(out._id) || [];
-			const outcomeVolume = outcomeBets.reduce(
-				(sum, bet) => sum + bet.pointsWagered,
-				0
-			);
-			const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
-
-			return ctx.db.insert("probabilityHistory", {
-				pollId: args.pollId,
-				outcomeId: out._id,
-				probability,
-				timestamp,
-			});
-		});
-
-		await Promise.all(historyInserts);
-
-		return await ctx.db.get(betId);
 	},
 });
 
@@ -171,20 +193,10 @@ export const getUserBets = query({
 		const pollIds = [...new Set(filteredBets.map((bet) => bet.pollId))];
 		const outcomeIds = [...new Set(filteredBets.map((bet) => bet.outcomeId))];
 
-		const [polls, outcomes] = await Promise.all([
-			Promise.all(pollIds.map((id) => ctx.db.get(id))),
-			Promise.all(outcomeIds.map((id) => ctx.db.get(id))),
+		const [pollMap, outcomeMap] = await Promise.all([
+			buildEntityMap(ctx, pollIds),
+			buildEntityMap(ctx, outcomeIds),
 		]);
-
-		const pollMap = new Map();
-		for (let i = 0; i < pollIds.length; i++) {
-			pollMap.set(pollIds[i], polls[i]);
-		}
-
-		const outcomeMap = new Map();
-		for (let i = 0; i < outcomeIds.length; i++) {
-			outcomeMap.set(outcomeIds[i], outcomes[i]);
-		}
 
 		const betsWithDetails = filteredBets.map((bet) => ({
 			...bet,
@@ -213,20 +225,10 @@ export const getPollBets = query({
 		const userIds = [...new Set(bets.map((bet) => bet.userId))];
 		const outcomeIds = [...new Set(bets.map((bet) => bet.outcomeId))];
 
-		const [users, outcomes] = await Promise.all([
-			Promise.all(userIds.map((id) => ctx.db.get(id))),
-			Promise.all(outcomeIds.map((id) => ctx.db.get(id))),
+		const [userMap, outcomeMap] = await Promise.all([
+			buildEntityMap(ctx, userIds),
+			buildEntityMap(ctx, outcomeIds),
 		]);
-
-		const userMap = new Map();
-		for (let i = 0; i < userIds.length; i++) {
-			userMap.set(userIds[i], users[i]);
-		}
-
-		const outcomeMap = new Map();
-		for (let i = 0; i < outcomeIds.length; i++) {
-			outcomeMap.set(outcomeIds[i], outcomes[i]);
-		}
 
 		const betsWithDetails = bets.map((bet) => ({
 			...bet,
@@ -253,12 +255,7 @@ export const getOutcomeBets = query({
 		}
 
 		const userIds = [...new Set(bets.map((bet) => bet.userId))];
-		const users = await Promise.all(userIds.map((id) => ctx.db.get(id)));
-
-		const userMap = new Map();
-		for (let i = 0; i < userIds.length; i++) {
-			userMap.set(userIds[i], users[i]);
-		}
+		const userMap = await buildEntityMap(ctx, userIds);
 
 		const betsWithUsers = bets.map((bet) => ({
 			...bet,
@@ -277,122 +274,12 @@ export const placeBetWithAuth = mutation({
 		pointsWagered: v.number(),
 	},
 	handler: async (ctx, args) => {
-	const user = await ctx.db.get(args.userId);
-	if (!user) {
-		throw new Error("User not found");
-	}
-
-	if (args.pointsWagered <= 0) {
-		throw new Error("Bet amount must be positive");
-	}
-
-	if (!Number.isInteger(args.pointsWagered)) {
-		throw new ConvexError("Bet amount must be a whole number");
-	}
-
-	if (user.pointBalance < args.pointsWagered) {
-		throw new Error("Insufficient points");
-	}
-
-	const poll = await ctx.db.get(args.pollId);
-		if (!poll) {
-			throw new Error("Poll not found");
-		}
-
-		if (poll.status !== "active") {
-			throw new Error("Poll is not active");
-		}
-
-		const outcome = await ctx.db.get(args.outcomeId);
-		if (!outcome) {
-			throw new Error("Outcome not found");
-		}
-
-		if (outcome.pollId !== args.pollId) {
-			throw new Error("Outcome does not belong to this poll");
-		}
-
-	if (poll.allowMultipleVotes !== true) {
-		const existingBets = await ctx.db
-			.query("bets")
-			.withIndex("by_user_poll", (q) => q.eq("userId", args.userId).eq("pollId", args.pollId))
-			.collect();
-
-		const hasVotedOnDifferentOutcome = existingBets.some(
-			(bet) => bet.outcomeId !== args.outcomeId
+		return await executeBetPlacement(
+			ctx,
+			args.userId,
+			args.pollId,
+			args.outcomeId,
+			args.pointsWagered
 		);
-
-		if (hasVotedOnDifferentOutcome) {
-			throw new ConvexError("You can only vote on one outcome for this poll");
-		}
-	}
-
-		const sharesReceived = calculateSharesReceived(
-			args.pointsWagered,
-			outcome.totalShares
-		);
-
-		await ctx.db.patch(args.userId, {
-			pointBalance: user.pointBalance - args.pointsWagered,
-		});
-
-		await ctx.db.patch(args.outcomeId, {
-			totalShares: outcome.totalShares + sharesReceived,
-		});
-
-		const betId = await ctx.db.insert("bets", {
-			userId: args.userId,
-			pollId: args.pollId,
-			outcomeId: args.outcomeId,
-			pointsWagered: args.pointsWagered,
-			sharesReceived,
-			createdAt: Date.now(),
-			settled: false,
-		});
-
-		const [allBets, allOutcomes] = await Promise.all([
-			ctx.db
-				.query("bets")
-				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-				.collect(),
-			ctx.db
-				.query("outcomes")
-				.withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
-				.collect(),
-		]);
-
-		const totalVolume = allBets.reduce(
-			(sum, bet) => sum + bet.pointsWagered,
-			0
-		);
-
-		const betsByOutcome = new Map<string, typeof allBets>();
-		for (const bet of allBets) {
-			if (!betsByOutcome.has(bet.outcomeId)) {
-				betsByOutcome.set(bet.outcomeId, []);
-			}
-			betsByOutcome.get(bet.outcomeId)!.push(bet);
-		}
-
-		const timestamp = Date.now();
-		const historyInserts = allOutcomes.map((out) => {
-			const outcomeBets = betsByOutcome.get(out._id) || [];
-			const outcomeVolume = outcomeBets.reduce(
-				(sum, bet) => sum + bet.pointsWagered,
-				0
-			);
-			const probability = totalVolume > 0 ? (outcomeVolume / totalVolume) * 100 : 0;
-
-			return ctx.db.insert("probabilityHistory", {
-				pollId: args.pollId,
-				outcomeId: out._id,
-				probability,
-				timestamp,
-			});
-		});
-
-		await Promise.all(historyInserts);
-
-		return await ctx.db.get(betId);
 	},
 });
