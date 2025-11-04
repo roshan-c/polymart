@@ -106,6 +106,33 @@ To grant admin privileges to a user:
    ```
 6. The user will now have access to admin features (resolve/cancel polls)
 
+## Using the API
+
+Polymart provides a TypeScript SDK for easy integration with external applications. The SDK is available in the `packages/sdk` directory.
+
+### Installation
+
+```bash
+npm install @polymart/sdk
+```
+
+### Quick Start
+
+```typescript
+import { PolymartSDK } from '@polymart/sdk';
+
+const client = new PolymartSDK({
+	apiKey: 'your_api_key_here'
+});
+
+const { polls } = await client.getPolls({ status: 'active' });
+console.log(polls);
+```
+
+For detailed SDK documentation, see [packages/sdk/README.md](./packages/sdk/README.md).
+
+For API documentation without the SDK, see [API.md](./API.md).
+
 
 
 
@@ -119,7 +146,8 @@ polymart/
 ├── apps/
 │   ├── web/         # Next.js 15 frontend application
 ├── packages/
-│   └── backend/     # Convex backend functions and schema
+│   ├── backend/     # Convex backend functions and schema
+│   └── sdk/         # TypeScript SDK for the Polymart API
 ```
 
 ## Available Scripts
