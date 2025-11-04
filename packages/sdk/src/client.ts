@@ -53,7 +53,21 @@ export class PolymartSDK {
 			headers,
 		});
 
-		const data = await response.json();
+		let data: any;
+		try {
+			data = await response.json();
+		} catch (error) {
+			if (!response.ok) {
+				throw new PolymartSDKError(
+					`HTTP ${response.status}: ${response.statusText}`,
+					response.status
+				);
+			}
+			throw new PolymartSDKError(
+				"Failed to parse response as JSON",
+				response.status
+			);
+		}
 
 		if (!response.ok) {
 			throw new PolymartSDKError(
