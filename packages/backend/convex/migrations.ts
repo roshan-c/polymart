@@ -109,3 +109,32 @@ export const backfillDiscordIds = mutation({
 		};
 	},
 });
+
+export const migrateAuthIdField = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const users = await ctx.db.query("users").collect();
+		let migratedCount = 0;
+		let skippedCount = 0;
+
+		for (const user of users) {
+			const oldClerkId = (user as any).clerkId;
+			if (oldClerkId && !(user as any).authId) {
+				await ctx.db.patch(user._id, {
+					authId: oldClerkId,
+				} as any);
+				migratedCount++;
+			} else if ((user as any).authId) {
+				skippedCount++;
+			}
+		}
+
+		return {
+			success: true,
+			migratedCount,
+			skippedCount,
+			totalUsers: users.length,
+			message: `Migrated ${migratedCount} users from clerkId to authId, skipped ${skippedCount} users that already had authId`
+		};
+	},
+});

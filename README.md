@@ -9,7 +9,7 @@ A prediction market platform where users can create polls, place bets, and track
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
 - **Convex** - Reactive backend-as-a-service platform
-- **Clerk** - Complete user authentication and management
+- **better-auth** - Modern authentication framework for TypeScript
 - **Turborepo** - Optimized monorepo build system
 
 ## Getting Started
@@ -30,32 +30,43 @@ bun dev:setup
 
 Follow the prompts to create a new Convex project and connect it to your application.
 
-### 3. Clerk Authentication Setup
+### 3. Better-Auth Authentication Setup
 
-1. Create a Clerk account at [clerk.com](https://clerk.com)
-2. Create a new application in the Clerk dashboard
-3. Copy the **Publishable Key** from the Clerk dashboard
-4. Create a `.env` file in `apps/web/` directory:
+1. Create a `.env` file in `apps/web/` directory:
 
 ```bash
 cp apps/web/.env.example apps/web/.env
 ```
 
-5. Add your Clerk publishable key to `.env`:
+2. Add your configuration to `.env`:
 
 ```env
-VITE_CONVEX_URL=<your-convex-url>
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+NEXT_PUBLIC_CONVEX_URL=<your-convex-url>
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+BETTER_AUTH_SECRET=<generate-a-random-secret>
+BETTER_AUTH_URL=http://localhost:3001
 ```
 
-6. In the Clerk dashboard, configure Convex integration:
-   - Go to **JWT Templates** → Click **New template** → Select **Convex**
-   - Copy the **Issuer URL** (will be something like `https://your-app.clerk.accounts.dev`)
-   
-7. Configure Convex with Clerk:
+3. (Optional) For Discord OAuth, add:
+
+```env
+DISCORD_CLIENT_ID=<your-discord-client-id>
+DISCORD_CLIENT_SECRET=<your-discord-client-secret>
+```
+
+To set up Discord OAuth:
+- Go to [Discord Developer Portal](https://discord.com/developers/applications)
+- Create a new application
+- Go to OAuth2 section
+- Add redirect URL: `http://localhost:3001/api/auth/callback/discord`
+- Copy Client ID and Client Secret
+
+4. Configure Convex with better-auth:
    - Run `npx convex dev` if not already running
    - Go to your Convex dashboard → **Settings** → **Authentication**
-   - Add Clerk as a provider using the Issuer URL from step 6
+   - Add a custom JWT provider with:
+     - Issuer: `http://localhost:3001` (or your BETTER_AUTH_URL)
+     - Application ID: `polymart`
 
 ### 4. Run the Development Server
 
@@ -68,7 +79,7 @@ Open [http://localhost:3001](http://localhost:3001) (or the port shown in termin
 ## How It Works
 
 ### Authentication
-- Users sign in via Clerk authentication
+- Users sign in via better-auth (email/password or Discord OAuth)
 - JWT tokens are validated by Convex backend
 - User data is automatically synced to Convex database on first sign-in
 - All backend mutations use authenticated sessions (no userId passed from frontend)
