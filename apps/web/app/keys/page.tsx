@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/nextjs";
+import Link from "next/link";
 import type { Id } from "@polymart/backend/convex/_generated/dataModel";
 
 export default function ApiKeysPage() {
@@ -104,9 +104,9 @@ export default function ApiKeysPage() {
 				<Card>
 					<CardContent className="py-12 text-center">
 						<p className="text-muted-foreground mb-4">Sign in to manage API keys</p>
-						<SignInButton mode="modal">
+						<Link href="/sign-in">
 							<Button>Sign In</Button>
-						</SignInButton>
+						</Link>
 					</CardContent>
 				</Card>
 			</div>

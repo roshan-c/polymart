@@ -11,7 +11,7 @@ async function getAuthenticatedUserId(ctx: QueryCtx | MutationCtx) {
 	
 	const user = await ctx.db
 		.query("users")
-		.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+		.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 		.first();
 	
 	if (!user) {
@@ -29,7 +29,7 @@ async function ensureUserExists(ctx: MutationCtx) {
 	
 	const existing = await ctx.db
 		.query("users")
-		.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+		.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 		.first();
 	
 	if (existing) {
@@ -40,7 +40,7 @@ async function ensureUserExists(ctx: MutationCtx) {
 	const name = identity.name || identity.nickname || identity.givenName || "User";
 	
 	const userId = await ctx.db.insert("users", {
-		clerkId: identity.subject,
+		authId: identity.subject,
 		email,
 		name,
 		pointBalance: INITIAL_POINT_BALANCE,
@@ -76,14 +76,14 @@ export const syncUser = mutation({
 
 export const createOrGetUser = mutation({
 	args: {
-		clerkId: v.string(),
+		authId: v.string(),
 		email: v.string(),
 		name: v.string(),
 	},
 	handler: async (ctx, args) => {
 		const existingUser = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+			.withIndex("by_authId", (q) => q.eq("authId", args.authId))
 			.first();
 
 		if (existingUser) {
@@ -91,7 +91,7 @@ export const createOrGetUser = mutation({
 		}
 
 		const userId = await ctx.db.insert("users", {
-			clerkId: args.clerkId,
+			authId: args.authId,
 			email: args.email,
 			name: args.name,
 			pointBalance: INITIAL_POINT_BALANCE,
@@ -113,7 +113,7 @@ export const getCurrentUser = query({
 		
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 		
 		return user ?? null;
@@ -203,7 +203,7 @@ export const updateDiscordId = mutation({
 		
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 		
 		if (!user) {

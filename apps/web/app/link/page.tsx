@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 import { useMutation } from "convex/react";
 import { api } from "@polymart/backend/convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,7 @@ const AVAILABLE_SCOPES = [
 
 function LinkPageContent() {
 	const searchParams = useSearchParams();
-	const { user, isLoaded } = useUser();
+	const { data: session, isPending } = useSession();
 	const [token, setToken] = useState<string | null>(null);
 	const [selectedScopes, setSelectedScopes] = useState<string[]>([
 		"polls:read",
@@ -70,7 +70,7 @@ function LinkPageContent() {
 		);
 	};
 
-	if (!isLoaded) {
+	if (isPending) {
 		return (
 			<div className="flex items-center justify-center min-h-[60vh]">
 				<Loader />
@@ -78,7 +78,7 @@ function LinkPageContent() {
 		);
 	}
 
-	if (!user) {
+	if (!session?.session) {
 		return (
 			<div className="container max-w-2xl mx-auto py-8">
 				<Card>

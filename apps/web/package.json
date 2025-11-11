@@ -10,10 +10,10 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.33.2",
     "@hookform/resolvers": "^5.1.1",
     "@polymart/backend": "workspace:*",
     "@tanstack/react-form": "^1.12.3",
+    "better-auth": "^1.3.34",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.27.0",

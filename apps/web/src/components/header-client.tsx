@@ -2,11 +2,21 @@
 
 import NextLink from "next/link";
 import { ModeToggle } from "./mode-toggle";
-import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
+import { useSession, signOut } from "@/lib/auth-client";
 import { useCurrentUser } from "../lib/useCurrentUser";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User } from "lucide-react";
 
 export default function Header() {
-	const { isSignedIn } = useAuth();
+	const { data: session } = useSession();
 	const currentUser = useCurrentUser();
 
 	const links = [
@@ -14,6 +24,10 @@ export default function Header() {
 		{ to: "/profile", label: "Profile" },
 		{ to: "/keys", label: "API" },
 	] as const;
+
+	const handleSignOut = async () => {
+		await signOut();
+	};
 
 	return (
 		<div>
@@ -36,20 +50,40 @@ export default function Header() {
 							{currentUser.pointBalance} points
 						</div>
 					)}
-					{isSignedIn ? (
-						<UserButton />
+					{session?.session ? (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="icon" className="rounded-full">
+									<User className="h-5 w-5" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>My Account</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem asChild>
+									<NextLink href="/profile">Profile</NextLink>
+								</DropdownMenuItem>
+								<DropdownMenuItem asChild>
+									<NextLink href="/keys">API Keys</NextLink>
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem onClick={handleSignOut}>
+									Sign Out
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					) : (
 						<div className="flex items-center gap-2">
-							<SignInButton mode="modal">
-								<button className="px-3 py-1 text-sm font-medium hover:underline">
+							<NextLink href="/sign-in">
+								<Button variant="ghost" size="sm">
 									Sign In
-								</button>
-							</SignInButton>
-							<SignUpButton mode="modal">
-								<button className="px-3 py-1 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+								</Button>
+							</NextLink>
+							<NextLink href="/sign-up">
+								<Button size="sm">
 									Sign Up
-								</button>
-							</SignUpButton>
+								</Button>
+							</NextLink>
 						</div>
 					)}
 					<ModeToggle />

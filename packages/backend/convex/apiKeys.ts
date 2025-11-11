@@ -23,7 +23,7 @@ export const createApiKey = mutation({
 
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!user) {
@@ -54,7 +54,7 @@ export const getUserApiKeys = query({
 
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!user) {
@@ -80,7 +80,7 @@ export const revokeApiKey = mutation({
 
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!user) {
