@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function AdminPage() {
 	const currentUser = useCurrentUser();
@@ -101,9 +101,9 @@ export default function AdminPage() {
 				<Card>
 					<CardContent className="pt-6 text-center">
 						<p className="text-muted-foreground mb-4">Sign in to access the admin dashboard</p>
-						<SignInButton mode="modal">
+						<Link href="/sign-in">
 							<Button>Sign In</Button>
-						</SignInButton>
+						</Link>
 					</CardContent>
 				</Card>
 			</div>

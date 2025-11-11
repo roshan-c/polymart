@@ -5,7 +5,7 @@ import { api } from "@polymart/backend/convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
@@ -33,9 +33,9 @@ export default function ProfilePage() {
 				<Card>
 					<CardContent className="pt-6 text-center">
 						<p className="text-muted-foreground mb-4">Sign in to view your profile</p>
-						<SignInButton mode="modal">
+						<Link href="/sign-in">
 							<Button>Sign In</Button>
-						</SignInButton>
+						</Link>
 					</CardContent>
 				</Card>
 			</div>

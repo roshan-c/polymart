@@ -17,7 +17,7 @@ export const resolvePoll = mutation({
 
 		const admin = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!admin || !admin.isAdmin) {
@@ -122,7 +122,7 @@ export const cancelPoll = mutation({
 
 		const admin = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!admin || !admin.isAdmin) {

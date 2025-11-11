@@ -5,13 +5,13 @@ export default defineSchema({
 	users: defineTable({
 		name: v.string(),
 		email: v.string(),
-		clerkId: v.string(),
+		authId: v.string(),
 		discordId: v.optional(v.string()),
 		pointBalance: v.number(),
 		isAdmin: v.boolean(),
 		createdAt: v.number(),
 	})
-		.index("by_clerkId", ["clerkId"])
+		.index("by_authId", ["authId"])
 		.index("by_email", ["email"])
 		.index("by_discordId", ["discordId"]),
 

@@ -80,7 +80,7 @@ export const verifyLinkToken = mutation({
 
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!user) {
@@ -205,7 +205,7 @@ export const getUserAuthorizations = query({
 
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!user) {
@@ -247,7 +247,7 @@ export const revokeAuthorization = mutation({
 
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+			.withIndex("by_authId", (q) => q.eq("authId", identity.subject))
 			.first();
 
 		if (!user) {

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { ProbabilityChart } from "@/components/probability-chart";
 
 export default function PollDetailClient({ pollId }: { pollId: string }) {
@@ -214,9 +214,9 @@ export default function PollDetailClient({ pollId }: { pollId: string }) {
 							{!currentUser ? (
 								<div className="text-center py-8">
 									<p className="text-muted-foreground mb-4">Sign in to place bets</p>
-									<SignInButton mode="modal">
+									<Link href="/sign-in">
 										<Button>Sign In</Button>
-									</SignInButton>
+									</Link>
 								</div>
 							) : (
 								<>

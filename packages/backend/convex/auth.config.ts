@@ -1,8 +1,8 @@
 export default {
 	providers: [
 		{
-			domain: "https://clerk.polymart.xyz",
-			applicationID: "convex",
+			domain: process.env.BETTER_AUTH_URL || "http://localhost:3001",
+			applicationID: "polymart",
 		},
 	],
 };

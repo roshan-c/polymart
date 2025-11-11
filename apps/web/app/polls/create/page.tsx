@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SignInButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function CreatePollPage() {
 	const router = useRouter();
@@ -96,9 +96,9 @@ export default function CreatePollPage() {
 					{!currentUser ? (
 						<div className="text-center py-8">
 							<p className="text-muted-foreground mb-4">Sign in to create polls</p>
-							<SignInButton mode="modal">
+							<Link href="/sign-in">
 								<Button>Sign In</Button>
-							</SignInButton>
+							</Link>
 						</div>
 					) : (
 						<form onSubmit={(e) => {
